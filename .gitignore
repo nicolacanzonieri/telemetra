@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Personal tools
+repo_txt.txt
+repo-to-txt.py
+repo-to-txt.sh
