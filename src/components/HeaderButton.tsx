@@ -7,7 +7,7 @@ interface HeaderButtonProps {
 
 export default function HeaderButton({onClick, children}: HeaderButtonProps) {
     return (
-        <button onClick={onClick} className='w-20 h-20 flex flex-row items-center justify-center'>
+        <button onClick={onClick} className='w-header-btn h-header-btn flex flex-row items-center justify-center'>
             {children}
         </button>
     );
