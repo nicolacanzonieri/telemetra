@@ -1,22 +1,18 @@
 import { useState } from 'react';
 
 // PAGES
-import StartMenuPage from './components/StartMenuPage.tsx'
-import SettingsPage from './components/SettingsPage.tsx'
+import StartMenuPage from './pages/StartMenuPage.tsx'
+import SettingsPage from './pages/SettingsPage.tsx'
 
 
 function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  function onClickSettings() {
-    setIsSettingsOpen(!isSettingsOpen);
-  }
-
   return (
     <div className='relative'>
-      <StartMenuPage onOpenSettings={onClickSettings}/>
+      <StartMenuPage onOpenSettings={() => setIsSettingsOpen(!isSettingsOpen)}/>
       { isSettingsOpen && (
-        <SettingsPage onCloseSettings={onClickSettings}/>
+        <SettingsPage onCloseSettings={() => setIsSettingsOpen(!isSettingsOpen)}/>
       )}
     </div>
   )
