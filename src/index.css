@@ -1,10 +1,32 @@
 @import "tailwindcss";
 
+@theme {
+  /* ---- COLORS ---- */
+  --color-bg-1-dark: #000000;
+
+  --color-border-1-dark: #08DD82;
+
+  --color-text-1-dark: #E5E5E5;
+  --color-text-2-dark: #08DD82;
+
+  --color-icon-1-dark: #FFFFFF;
+  /* COLORS > HOVER */
+  --color-bg-hover-1-dark: #444444;
+
+  --color-border-hover-1-dark: #FFFFFF;
+  /* COLORS > ACTIVE */
+  --color-bg-active-1-dark: #606060;
+
+  --color-border-active-1-dark: #FFFFFF;
+
+  --color-icon-active-1-dark: #A1A1A1;
+}
+
 *::after, *::before {
   box-sizing: border-box;
 }
 
 :root {
   padding: 0px; margin: 0px;
-  background-color: black;
+  background-color: var(--color-bg-1-dark);
 }
