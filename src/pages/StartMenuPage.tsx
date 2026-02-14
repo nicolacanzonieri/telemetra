@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import HeaderButton from '../components/HeaderButton';
 // import { db } from '../db/database';
 
 interface StartMenuPageProps {
@@ -8,18 +9,6 @@ interface StartMenuPageProps {
 interface MenuButtonProps {
     label: string;
     onClick?: () => void;
-}
-
-interface SettingsButtonProps {
-    onClick?: () => void;
-}
-
-function SettingsButton({onClick}: SettingsButtonProps) {
-    return (
-        <button onClick={onClick} className='w-20 h-20 flex flex-row items-center justify-center'>
-            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-cog-icon lucide-cog text-white active:text-neutral-400"><path d="M11 10.27 7 3.34"/><path d="m11 13.73-4 6.93"/><path d="M12 22v-2"/><path d="M12 2v2"/><path d="M14 12h8"/><path d="m17 20.66-1-1.73"/><path d="m17 3.34-1 1.73"/><path d="M2 12h2"/><path d="m20.66 17-1.73-1"/><path d="m20.66 7-1.73 1"/><path d="m3.34 17 1.73-1"/><path d="m3.34 7 1.73 1"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="12" r="8"/></svg>
-        </button>
-    );
 }
 
 function MenuButton({label, onClick}: MenuButtonProps) {
@@ -44,7 +33,7 @@ export default function StartMenuPage({ onOpenSettings }: StartMenuPageProps) {
     return(
         <div className='w-screen h-screen absolute flex flex-col z-0'>
             <div className='h-20 flex flex-row items-center justify-end'>
-                <SettingsButton onClick={onOpenSettings}/>
+                <HeaderButton onClick={onOpenSettings} children={<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-cog-icon lucide-cog text-white active:text-neutral-400"><path d="M11 10.27 7 3.34"/><path d="m11 13.73-4 6.93"/><path d="M12 22v-2"/><path d="M12 2v2"/><path d="M14 12h8"/><path d="m17 20.66-1-1.73"/><path d="m17 3.34-1 1.73"/><path d="M2 12h2"/><path d="m20.66 17-1.73-1"/><path d="m20.66 7-1.73 1"/><path d="m3.34 17 1.73-1"/><path d="m3.34 7 1.73 1"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="12" r="8"/></svg>}/>
             </div>
             <div className='flex flex-col flex-1 items-center justify-center gap-3'>
                 <span className='text-white text-5xl font-bold italic'>TELEMETRA</span>
