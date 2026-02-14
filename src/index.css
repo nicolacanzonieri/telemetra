@@ -54,12 +54,12 @@
   /* COLORS -> HOVER */
   --bg-hover-1: #444444;
 
-  --border-hover-1: #FFFFFF;
+  --border-hover-1: #000000;
 
   /* COLORS -> ACTIVE */
-  --bg-active-1: #606060;
+  --bg-active-1: #909090;
 
-  --border-active-1: #FFFFFF;
+  --border-active-1: #000000;
 
   --icon-active-1: #A1A1A1;
 }
