@@ -31,9 +31,6 @@
   --spacing-gap-md: 15px;
   
   --size-icon-lg: 40px;
-
-  --spacing-menu-btn-w: 340px;
-  --spacing-menu-btn-h: 80px;
 }
 
 *::after, *::before {
