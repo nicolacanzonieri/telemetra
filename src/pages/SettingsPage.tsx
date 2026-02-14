@@ -1,3 +1,4 @@
+import { useTheme } from "../hooks/useTheme";
 import HeaderButton from "../components/HeaderButton";
 
 interface SettingsPageProps {
@@ -7,21 +8,23 @@ interface SettingsPageProps {
 interface SettingsButtonProps {
     type: 'action' | 'toggle';
     label: string;
+    value?: string;
+    onClick?: () => void;
 }
 
-function SettingsButton({type, label}: SettingsButtonProps) {
+function SettingsButton({type, label, value, onClick}: SettingsButtonProps) {
     return (
         <>
             {type == 'action' && (
-                <div className="w-80 h-20 flex flex-row items-center justify-center p-p-md border border-border-1-dark hover:bg-bg-hover-1-dark active:border-border-hover-1-dark active:bg-bg-active-1-dark">
-                    <span className="text-sm font-mono tracking-widest uppercase text-neutral-200">{label}</span>
+                <div onClick={onClick} className="w-80 h-20 flex flex-row items-center justify-center p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
+                    <span className="text-sm font-mono tracking-widest uppercase text-text-1">{label}</span>
                 </div>
             )}
 
             {type == 'toggle' && (
-                <div className="w-80 h-20 flex flex-row items-center place-content-between p-p-md border border-border-1-dark hover:bg-bg-hover-1-dark active:border-border-active-1-dark active:bg-bg-active-1-dark">
-                    <span className="text-sm font-mono tracking-widest uppercase text-neutral-200">{label}</span>
-                    <span className="text-sm font-mono tracking-widest uppercase text-neutral-200">ON</span>
+                <div onClick={onClick} className="w-80 h-20 flex flex-row items-center place-content-between p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-active-1 active:bg-bg-active-1">
+                    <span className="text-sm font-mono tracking-widest uppercase text-text-1">{label}</span>
+                    <span className="text-sm font-mono tracking-widest uppercase text-text-1">{value || 'OFF'}</span>
                 </div>
             )}
         </>
@@ -29,18 +32,20 @@ function SettingsButton({type, label}: SettingsButtonProps) {
 }
 
 export default function SettingsPage({onCloseSettings}: SettingsPageProps) {
+    const { theme, toggleTheme } = useTheme();
+
     return(
-        <div className='w-screen h-screen absolute flex flex-col z-10 bg-black'>
+        <div className='w-screen h-screen absolute flex flex-col z-10 bg-bg-1'>
             <div className='h-header-h flex flex-row items-center justify-end'>
                 <HeaderButton onClick={onCloseSettings}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-icon-lg h-icon-lg lucide lucide-x-icon lucide-x text-icon-1-dark active:text-icon-active-1-dark"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-icon-lg h-icon-lg lucide lucide-x-icon lucide-x text-icon-1 active:text-icon-active-1"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                 </HeaderButton>
             </div>
     
-            <div className='flex flex-col flex-1 items-center justify-start p-p-md gap-gap-md bg-bg-1-dark'>
-                <span className="mb-10 text-text-1-dark text-4xl font-mono tracking-widest uppercase">Settings</span>
+            <div className='flex flex-col flex-1 items-center justify-start p-p-md gap-gap-md bg-bg-1'>
+                <span className="mb-10 text-text-1 text-4xl font-mono tracking-widest uppercase">Settings</span>
 
-                <SettingsButton type="toggle" label={"Dark mode"}/>
+                <SettingsButton type="toggle" label={"Dark mode"} value={theme === 'dark' ? 'ON' : 'OFF'} onClick={toggleTheme}/>
                 <SettingsButton type="action" label={"Update Telemetra"}/>
                 <SettingsButton type="action" label={"Clear all data and update"}/>
             </div>

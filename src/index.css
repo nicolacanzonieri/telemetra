@@ -2,26 +2,26 @@
 
 @theme {
   /* ===== COLORS ===== */
-  --color-bg-1-dark: #000000;
+  --color-bg-1: var(--bg-1);
 
-  --color-border-1-dark: #08DD82;
+  --color-border-1: var(--border-1);
 
-  --color-text-1-dark: #E5E5E5;
-  --color-text-2-dark: #08DD82;
+  --color-text-1: var(--text-1);
+  --color-text-2: var(--text-2);
 
-  --color-icon-1-dark: #FFFFFF;
+  --color-icon-1: var(--icon-1);
 
   /* COLORS -> HOVER */
-  --color-bg-hover-1-dark: #444444;
+  --color-bg-hover-1: var(--bg-hover-1);
 
-  --color-border-hover-1-dark: #FFFFFF;
+  --color-border-hover-1: var(--border-hover-1);
 
   /* COLORS -> ACTIVE */
-  --color-bg-active-1-dark: #606060;
+  --color-bg-active-1: var(--bg-active-1);
 
-  --color-border-active-1-dark: #FFFFFF;
+  --color-border-active-1: var(--border-active-1);
 
-  --color-icon-active-1-dark: #A1A1A1;
+  --color-icon-active-1: var(--icon-active-1);
 
   /* ===== DIMENSIONS ===== */
   --spacing-header-h: 80px;
@@ -39,5 +39,50 @@
 
 :root {
   padding: 0px; margin: 0px;
-  background-color: var(--color-bg-1-dark);
+  background-color: var(--bg-1);
+
+  /* ===== COLORS ===== */
+  --bg-1: #FFFFFF;
+
+  --border-1: #0096FF;
+
+  --text-1: #000000;
+  --text-2: #0096FF;
+
+  --icon-1: #000000;
+
+  /* COLORS -> HOVER */
+  --bg-hover-1: #444444;
+
+  --border-hover-1: #FFFFFF;
+
+  /* COLORS -> ACTIVE */
+  --bg-active-1: #606060;
+
+  --border-active-1: #FFFFFF;
+
+  --icon-active-1: #A1A1A1;
+}
+
+[data-theme='dark'] {
+  --bg-1: #000000;
+
+  --border-1: #08DD82;
+
+  --text-1: #E5E5E5;
+  --text-2: #08DD82;
+
+  --icon-1: #FFFFFF;
+
+  /* COLORS -> HOVER */
+  --bg-hover-1: #444444;
+
+  --border-hover-1: #FFFFFF;
+
+  /* COLORS -> ACTIVE */
+  --bg-active-1: #606060;
+
+  --border-active-1: #FFFFFF;
+
+  --icon-active-1: #A1A1A1;
 }
