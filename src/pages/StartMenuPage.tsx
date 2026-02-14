@@ -13,7 +13,7 @@ interface MenuButtonProps {
 
 function MenuButton({label, onClick}: MenuButtonProps) {
     return(
-        <button onClick={onClick} className='w-75 h-15 flex flex-row items-center justify-center bg-[rgb(0, 0, 0)] border border-emerald-500 font-mono tracking-widest uppercase text-neutral-200 hover:bg-white/15 active:border-white active:bg-white/35'>
+        <button onClick={onClick} className='w-85 h-20 flex flex-row items-center justify-center bg-[rgb(0, 0, 0)] border border-emerald-500 font-mono tracking-widest uppercase text-neutral-200 hover:bg-white/15 active:border-white active:bg-white/35'>
             {label}
         </button>
     );

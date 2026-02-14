@@ -13,13 +13,13 @@ function SettingsButton({type, label}: SettingsButtonProps) {
     return (
         <>
             {type == 'action' && (
-                <div className="w-full h-20 flex flex-row items-center justify-center p-5 border border-emerald-500">
+                <div className="w-full h-20 flex flex-row items-center justify-center p-5 border border-emerald-500 hover:bg-white/15 active:border-white active:bg-white/35">
                     <span className="text-sm font-mono tracking-widest uppercase text-neutral-200">{label}</span>
                 </div>
             )}
 
             {type == 'toggle' && (
-                <div className="w-full h-20 flex flex-row items-center place-content-between p-5 border border-emerald-500">
+                <div className="w-full h-20 flex flex-row items-center place-content-between p-5 border border-emerald-500 hover:bg-white/15 active:border-white active:bg-white/35">
                     <span className="text-sm font-mono tracking-widest uppercase text-neutral-200">{label}</span>
                     <span className="text-sm font-mono tracking-widest uppercase text-neutral-200">ON</span>
                 </div>
