@@ -11,9 +11,11 @@ function App() {
   return (
     <div className='relative'>
       <StartMenuPage onOpenSettings={() => setIsSettingsOpen(!isSettingsOpen)}/>
+
       { isSettingsOpen && (
         <SettingsPage onCloseSettings={() => setIsSettingsOpen(!isSettingsOpen)}/>
       )}
+      
     </div>
   )
 }
