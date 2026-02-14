@@ -35,7 +35,7 @@ export default function SettingsPage({onCloseSettings}: SettingsPageProps) {
                 <HeaderButton onClick={onCloseSettings} children={<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-x-icon lucide-x text-white active:text-neutral-400"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>}/>
             </div>
             <div className='flex flex-col flex-1 items-center justify-start p-5 gap-3 bg-black'>
-                <span className="mb-10 text-white text-4xl font-bold italic uppercase">Settings</span>
+                <span className="mb-10 text-white text-4xl font-bold font-mono tracking-widest uppercase">Settings</span>
 
                 <SettingsButton type="toggle" label={"Dark mode"}/>
                 <SettingsButton type="action" label={"Update Telemetra"}/>
