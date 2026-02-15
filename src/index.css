@@ -41,7 +41,7 @@
   padding: 0px; margin: 0px;
   background-color: var(--bg-1);
 
-  /* ===== COLORS ===== */
+  /* ===== COLORS LIGHT MODE ===== */
   --bg-1: #FFFFFF;
 
   --border-1: #0096FF;
@@ -52,7 +52,7 @@
   --icon-1: #000000;
 
   /* COLORS -> HOVER */
-  --bg-hover-1: #444444;
+  --bg-hover-1: #ababab;
 
   --border-hover-1: #000000;
 
@@ -65,6 +65,7 @@
 }
 
 [data-theme='dark'] {
+  /* ===== COLORS DARK MODE ===== */
   --bg-1: #000000;
 
   --border-1: #08DD82;
