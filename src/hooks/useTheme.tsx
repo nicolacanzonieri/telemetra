@@ -6,6 +6,8 @@ export function useTheme() {
         return savedTheme || document.documentElement.getAttribute('data-theme') || 'light';
     });
 
+    // Updates the document's data-theme attribute and persists the 
+    // selection to localStorage whenever the theme state changes.
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('telemetra-theme', theme);
