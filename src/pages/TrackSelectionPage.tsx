@@ -18,7 +18,7 @@ function TrackButton({trackName}: TrackButtonProps) {
 
 export default function TrackSelectionPage({onCloseTrackSelection}: TrackSelectionPageProps) {
     return(
-        <div className='w-screen h-screen absolute flex flex-col z-10 overflow-hidden bg-bg-1'>
+        <div className='w-screen h-screen absolute flex flex-col z-20 overflow-hidden bg-bg-1'>
             <div className='h-header-h flex flex-row items-center justify-end'>
                 <HeaderButton onClick={onCloseTrackSelection}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-icon-lg h-icon-lg lucide lucide-x-icon lucide-x text-icon-1 active:text-icon-active-1"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
