@@ -40,7 +40,6 @@ export default function TrackSelectionPage({onCloseTrackSelection}: TrackSelecti
                 <div id="track-list-menu" className='min-h-0 flex flex-col flex-1 items-center justify-start gap-gap-md bg-bg-1'>
                     <span className="mb-10 text-text-1 text-3xl font-mono tracking-widest uppercase">Track Selection</span>
                     
-                    {/* Add track button */}
                     <button onClick={() => setIsTrackTypeMenuOpen(true)} className="w-80 h-20 flex flex-row items-center justify-center mb-5 p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
                         <span className="text-sm font-mono tracking-widest uppercase text-text-1">Add track</span>
                     </button>
