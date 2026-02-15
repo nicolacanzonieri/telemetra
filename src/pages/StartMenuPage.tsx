@@ -1,9 +1,9 @@
-import { useState } from 'react';
 import { useTheme } from '../hooks/useTheme';
 import HeaderButton from '../components/HeaderButton';
 
 interface StartMenuPageProps {
     onOpenSettings: () => void;
+    onOpenSession: () => void;
 }
 
 interface MenuButtonProps {
@@ -19,17 +19,7 @@ function MenuButton({label, onClick}: MenuButtonProps) {
     );
 }
 
-export default function StartMenuPage({ onOpenSettings }: StartMenuPageProps) {
-    const [trackName, setTrackName] = useState('');
-
-    const handleStartSession = async () => {
-        // const id = await db.sessions.add({
-        //     date: new Date(),
-        //     trackName: trackName,
-        //     bestLapTime: 0
-        // });
-    };
-
+export default function StartMenuPage({ onOpenSettings, onOpenSession }: StartMenuPageProps) {
     // Load user theme preferences
     useTheme();
 
@@ -44,7 +34,7 @@ export default function StartMenuPage({ onOpenSettings }: StartMenuPageProps) {
                 <span className='text-text-1 text-5xl font-bold font-mono tracking-widest uppercase'>TELEMETRA</span>
                 <span className='mb-20 text-sm font-mono tracking-widest uppercase text-text-2'>Telemetry for racing enthusiasts</span>
                 
-                <MenuButton label="Start session" onClick={handleStartSession}/>
+                <MenuButton label="Start session" onClick={onOpenSession}/>
                 <MenuButton label="View sessions data"/>
             </div>
         </div>
