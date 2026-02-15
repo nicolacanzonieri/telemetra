@@ -50,6 +50,7 @@ export default function TrackSelectionPage({onCloseTrackSelection}: TrackSelecti
                 )}
             </div>
     
+            {/* Track Selection */}
             {!isTrackTypeMenuOpen && (
                 <div id="track-list-menu" className='min-h-0 flex flex-col flex-1 items-center justify-start gap-gap-md bg-bg-1'>
                     <span className="mb-10 text-text-1 text-3xl font-mono tracking-widest uppercase">Track Selection</span>
@@ -72,6 +73,7 @@ export default function TrackSelectionPage({onCloseTrackSelection}: TrackSelecti
                 </div>
             )}
             
+            {/* Track Type Selection */}
             {isTrackTypeMenuOpen && (
                 <div id="track-type-menu" className='min-h-0 flex flex-col flex-1 items-center justify-start gap-gap-md bg-bg-1'>
                     <span className="mb-10 text-text-1 text-3xl font-mono tracking-widest uppercase">Track Type</span>
