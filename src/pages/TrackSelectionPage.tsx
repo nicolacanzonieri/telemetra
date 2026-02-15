@@ -4,6 +4,18 @@ interface TrackSelectionPageProps {
     onCloseTrackSelection: () => void;
 }
 
+interface TrackButtonProps {
+    trackName: string;
+}
+
+function TrackButton({trackName}: TrackButtonProps) {
+    return (
+        <div className="w-80 h-20 flex flex-row items-center justify-center shrink-0 mb-5 p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
+            <span className="text-sm font-mono tracking-widest uppercase text-text-1">{trackName}</span>
+        </div>
+    );
+}
+
 export default function TrackSelectionPage({onCloseTrackSelection}: TrackSelectionPageProps) {
     return(
         <div className='w-screen h-screen absolute flex flex-col z-10 overflow-hidden bg-bg-1'>
@@ -24,30 +36,13 @@ export default function TrackSelectionPage({onCloseTrackSelection}: TrackSelecti
                 <span className="mb-5 text-text-1 text-xl font-mono tracking-widest uppercase">Saved tracks</span>
                 
                 <div className="w-full min-h-0 overflow-y-auto flex flex-col flex-1 items-center justify-start no-scrollbar">
-                    <div className="w-80 h-20 flex flex-row items-center justify-center shrink-0 mb-5 p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
-                        <span className="text-sm font-mono tracking-widest uppercase text-text-1">Track example</span>
-                    </div>
-                    <div className="w-80 h-20 flex flex-row items-center justify-center shrink-0 mb-5 p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
-                        <span className="text-sm font-mono tracking-widest uppercase text-text-1">Track example</span>
-                    </div>
-                    <div className="w-80 h-20 flex flex-row items-center justify-center shrink-0 mb-5 p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
-                        <span className="text-sm font-mono tracking-widest uppercase text-text-1">Track example</span>
-                    </div>
-                    <div className="w-80 h-20 flex flex-row items-center justify-center shrink-0 mb-5 p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
-                        <span className="text-sm font-mono tracking-widest uppercase text-text-1">Track example</span>
-                    </div>
-                    <div className="w-80 h-20 flex flex-row items-center justify-center shrink-0 mb-5 p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
-                        <span className="text-sm font-mono tracking-widest uppercase text-text-1">Track example</span>
-                    </div>
-                    <div className="w-80 h-20 flex flex-row items-center justify-center shrink-0 mb-5 p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
-                        <span className="text-sm font-mono tracking-widest uppercase text-text-1">Track example</span>
-                    </div>
-                    <div className="w-80 h-20 flex flex-row items-center justify-center shrink-0 mb-5 p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
-                        <span className="text-sm font-mono tracking-widest uppercase text-text-1">Track example</span>
-                    </div>
-                    <div className="w-80 h-20 flex flex-row items-center justify-center shrink-0 mb-5 p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
-                        <span className="text-sm font-mono tracking-widest uppercase text-text-1">Track example</span>
-                    </div>
+                    <TrackButton trackName={"Monza"}/>
+                    <TrackButton trackName={"Mugello"}/>
+                    <TrackButton trackName={"Imola"}/>
+                    <TrackButton trackName={"Misano"}/>
+                    <TrackButton trackName={"Spa"}/>
+                    <TrackButton trackName={"Nürburgring"}/>
+                    <TrackButton trackName={"Hockenheimring"}/>
                 </div>
             </div>
 
