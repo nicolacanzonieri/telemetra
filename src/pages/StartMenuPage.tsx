@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTheme } from '../hooks/useTheme';
 import HeaderButton from '../components/HeaderButton';
 
 interface StartMenuPageProps {
@@ -28,6 +29,9 @@ export default function StartMenuPage({ onOpenSettings }: StartMenuPageProps) {
         //     bestLapTime: 0
         // });
     };
+
+    // Load user theme preferences
+    useTheme();
 
     return(
         <div className='w-screen h-screen absolute flex flex-col z-0'>
