@@ -94,7 +94,7 @@ export default function EndpointSelectionPage({ onClose, onConfirm, title }: Map
                     </MapContainer>
 
                     {/* Action Overlay */}
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-xs px-4">
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-1000 w-full max-w-xs px-4">
                         {points.length < 2 ? (
                             <div className="bg-bg-1 border border-border-1 text-text-1 p-3 text-center font-mono text-[10px] uppercase">
                                 Tap {points.length === 0 ? "first" : "second"} endpoint
