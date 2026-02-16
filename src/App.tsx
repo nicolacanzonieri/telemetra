@@ -28,7 +28,13 @@ function App() {
     setTrackType(type);
     setStartGate(null);
     setFinishGate(null);
+
+    // If user selected a 'Sprint' type track then we have to set the 'start' point first and then
+    // the 'finish' point. If we are instead setting a 'Circuit' type track then we only need the 
+    // 'finish' point
     setSettingStep(type === 'Sprint' ? 'start' : 'finish');
+    
+    // Open the endpoint selection page
     setIsEndpointPageOpen(true);
   };
 

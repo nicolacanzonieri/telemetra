@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, useMapEvents } from 'react-leaflet';
-import { Icon, LatLng, Map as LeafletMap } from 'leaflet'; // Importa LeafletMap per il tipo
+import { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Polyline, useMap, useMapEvents } from 'react-leaflet';
+import { Icon, LatLng, Map as LeafletMap } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import HeaderButton from '../components/HeaderButton';
 
@@ -14,6 +14,14 @@ interface MapSelectionPageProps {
     onClose: () => void;
     onConfirm: (p1: LatLng, p2: LatLng) => void;
     title: string;
+}
+
+function MapInstanceSelector({ setMap }: { setMap: (map: LeafletMap) => void }) {
+    const map = useMap();
+    useEffect(() => {
+        setMap(map);
+    }, [map, setMap]);
+    return null;
 }
 
 export default function EndpointSelectionPage({ onClose, onConfirm, title }: MapSelectionPageProps) {
@@ -56,6 +64,11 @@ export default function EndpointSelectionPage({ onClose, onConfirm, title }: Map
         }
     };
 
+    function handleConfirmSelection() {
+        onConfirm(points[0], points[1]);
+        setPoints([]);
+    }
+
     return (
         <div className="w-screen h-screen absolute flex flex-col z-30 bg-bg-1 overflow-hidden">
             <div className="h-header-h flex flex-row items-center justify-end bg-bg-1">
@@ -79,8 +92,9 @@ export default function EndpointSelectionPage({ onClose, onConfirm, title }: Map
                 
                 {/* Map Container */}
                 <div className="w-full flex-1 border border-border-1 relative overflow-hidden">
-                    <MapContainer center={[45.621, 9.281]} zoom={15} className="h-full w-full" ref={setMapInstance}>
+                    <MapContainer center={[45.621, 9.281]} zoom={15} className="h-full w-full">
                         <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" attribution='&copy; Esri'/>
+                        <MapInstanceSelector setMap={setMapInstance} />
                         <MapEvents />
                         
                         {points.map((p, i) => (
@@ -100,7 +114,8 @@ export default function EndpointSelectionPage({ onClose, onConfirm, title }: Map
                                 Tap {points.length === 0 ? "first" : "second"} endpoint
                             </div>
                         ) : (
-                            <button onClick={() => onConfirm(points[0], points[1])} className="w-full h-16 bg-bg-1 border border-border-1 text-text-1 font-mono font-bold uppercase tracking-widest hover:bg-bg-hover-1 active:bg-bg-active-1">
+                            <button onClick={handleConfirmSelection} 
+                                className="w-full h-16 bg-bg-1 border border-border-1 text-text-1 font-mono font-bold uppercase tracking-widest hover:bg-bg-hover-1 active:bg-bg-active-1">
                                 Confirm Gate
                             </button>
                         )}
