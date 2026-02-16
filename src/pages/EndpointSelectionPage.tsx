@@ -17,6 +17,9 @@ interface MapSelectionPageProps {
 }
 
 function MapInstanceSelector({ setMap }: { setMap: (map: LeafletMap) => void }) {
+    // This helper sits inside the map to "grab" the actual map object as soon as it's ready.
+    // It then gives that object to our main page so we can programmatically move the view 
+    // (like when searching for a track).
     const map = useMap();
     useEffect(() => {
         setMap(map);
