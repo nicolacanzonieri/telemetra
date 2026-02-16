@@ -3,7 +3,7 @@ import HeaderButton from "../components/HeaderButton";
 
 interface TrackSelectionPageProps {
     onCloseTrackSelection: () => void;
-    onClickTrackType: () => void;
+    onClickTrackType: (type: 'Circuit' | 'Sprint') => void;
 }
 
 interface TrackButtonProps {
@@ -13,7 +13,7 @@ interface TrackButtonProps {
 interface TrackTypeButtonProps {
     label: string;
     children: ReactNode;
-    onClickTrackType: () => void;
+    onClick: () => void;
 }
 
 function TrackButton({trackName}: TrackButtonProps) {
@@ -24,9 +24,9 @@ function TrackButton({trackName}: TrackButtonProps) {
     );
 }
 
-function TrackTypeButton({label, children, onClickTrackType}: TrackTypeButtonProps) {
+function TrackTypeButton({label, children, onClick}: TrackTypeButtonProps) {
     return (
-        <div onClick={onClickTrackType} className="w-80 h-40 flex flex-col items-center justify-center p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
+        <div onClick={onClick} className="w-80 h-40 flex flex-col items-center justify-center p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
             {children}
             <span className="text-sm font-mono tracking-widest uppercase text-text-1">{label}</span>
         </div>
@@ -80,8 +80,8 @@ export default function TrackSelectionPage({onCloseTrackSelection, onClickTrackT
                 <div id="track-type-menu" className='min-h-0 flex flex-col flex-1 items-center justify-start gap-gap-md bg-bg-1'>
                     <span className="mb-10 text-text-1 text-3xl font-mono tracking-widest uppercase">Track Type</span>
                     
-                    <TrackTypeButton onClickTrackType={onClickTrackType} label={"Sprint"} children={<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-timer-icon lucide-timer m-5 text-icon-1 active:text-icon-active-1"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg>}/>
-                    <TrackTypeButton onClickTrackType={onClickTrackType} label={"Circuit"} children={<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-flag-icon lucide-flag m-5 text-icon-1 active:text-icon-active-1"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/></svg>}/>
+                    <TrackTypeButton onClick={() => onClickTrackType("Sprint")} label={"Sprint"} children={<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-timer-icon lucide-timer m-5 text-icon-1 active:text-icon-active-1"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg>}/>
+                    <TrackTypeButton onClick={() => onClickTrackType("Circuit")} label={"Circuit"} children={<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-flag-icon lucide-flag m-5 text-icon-1 active:text-icon-active-1"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/></svg>}/>
                 </div>
             )}
         </div>

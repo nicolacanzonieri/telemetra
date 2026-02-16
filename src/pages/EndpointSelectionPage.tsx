@@ -13,9 +13,10 @@ const markerIcon = new Icon({
 interface MapSelectionPageProps {
     onClose: () => void;
     onConfirm: (p1: LatLng, p2: LatLng) => void;
+    title: string;
 }
 
-export default function EndpointSelectionPage({ onClose, onConfirm }: MapSelectionPageProps) {
+export default function EndpointSelectionPage({ onClose, onConfirm, title }: MapSelectionPageProps) {
     const [points, setPoints] = useState<LatLng[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     
@@ -66,7 +67,7 @@ export default function EndpointSelectionPage({ onClose, onConfirm }: MapSelecti
             </div>
 
             <div className="flex flex-col flex-1 items-center justify-start p-p-md gap-gap-md relative bg-bg-1">
-                <span className="text-text-1 text-3xl font-mono tracking-widest uppercase text-center">Set Finish Line</span>
+                <span className="text-text-1 text-3xl font-mono tracking-widest uppercase text-center">{title}</span>
                 
                 {/* Search Bar */}
                 <form onSubmit={handleSearch} className="w-full max-w-md flex gap-gap-md">
