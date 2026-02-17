@@ -76,6 +76,8 @@ export default function OnBoardPage({ onCloseOnboardPage }: OnBoardPageProps) {
 
     const requestPermission = async () => {
         const explicitEvent = DeviceMotionEvent as unknown as DeviceMotionEventiOS;
+        
+        // Check if the requestPermission method exists in the current browser
         if (typeof explicitEvent.requestPermission === 'function') {
             try {
                 const permissionState = await explicitEvent.requestPermission();
