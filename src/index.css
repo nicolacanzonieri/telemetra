@@ -11,6 +11,8 @@
 
   --color-icon-1: var(--icon-1);
 
+  --color-ball: var(--ball);
+
   /* COLORS -> HOVER */
   --color-bg-hover-1: var(--bg-hover-1);
 
@@ -63,6 +65,8 @@
 
   --icon-1: #000000;
 
+  --ball: #232323;
+
   /* COLORS -> HOVER */
   --bg-hover-1: #ababab;
 
@@ -86,6 +90,8 @@
   --text-2: #08DD82;
 
   --icon-1: #FFFFFF;
+
+  --ball: #ffffff;
 
   /* COLORS -> HOVER */
   --bg-hover-1: #444444;
