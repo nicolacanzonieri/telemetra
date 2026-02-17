@@ -64,7 +64,7 @@ export default function SettingsPage({onCloseSettings}: SettingsPageProps) {
                 <span className="mb-10 text-text-1 text-4xl font-mono tracking-widest uppercase">Settings</span>
 
                 <SettingsButton type="toggle" label={"Dark mode"} value={theme === 'dark' ? 'ON' : 'OFF'} onClick={toggleTheme}/>
-                <SettingsButton type="action" label={"Update Telemetra"}/>
+                <SettingsButton type="action" label={"Update Telemetra"} onClick={() => window.location.reload()}/>
                 <SettingsButton type="action" label={"Clear all data and update"} onClick={handleHardReset}/>
             </div>
         </div>
