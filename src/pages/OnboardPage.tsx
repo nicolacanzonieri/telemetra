@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import TelemetryWorker from '../workers/telemetryWorker?worker';
 import type { WorkerResponse } from '../workers/telemetryWorker';
 
@@ -12,6 +12,10 @@ interface TimerProps {
 
 interface TimerLabelProps {
     label: string;
+}
+
+interface DeviceMotionEventiOS extends DeviceMotionEvent {
+    requestPermission?: () => Promise<'granted' | 'denied'>;
 }
 
 function TimerLabel({label}: TimerLabelProps) {
@@ -35,6 +39,7 @@ export default function OnBoardPage({ onCloseOnboardPage }: OnBoardPageProps) {
     const [gForce, setGForce] = useState({ x: 0, y: 0 });
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [isPressing, setIsPressing] = useState(false);
+    const [needsPermission, setNeedsPermission] = useState(false);
 
     const handleStartPress = () => {
         setIsPressing(true);
@@ -50,6 +55,37 @@ export default function OnBoardPage({ onCloseOnboardPage }: OnBoardPageProps) {
         if (timerRef.current) {
             window.clearTimeout(timerRef.current);
             timerRef.current = null;
+        }
+    };
+
+    const handleMotion = useCallback((event: DeviceMotionEvent) => {
+        if (event.accelerationIncludingGravity && workerRef.current) {
+            workerRef.current.postMessage({
+                type: 'SENSOR_DATA',
+                payload: {
+                    accel: {
+                        x: event.accelerationIncludingGravity.x,
+                        y: event.accelerationIncludingGravity.y,
+                        z: event.accelerationIncludingGravity.z
+                    },
+                    timestamp: Date.now()
+                }
+            });
+        }
+    }, []);
+
+    const requestPermission = async () => {
+        const explicitEvent = DeviceMotionEvent as unknown as DeviceMotionEventiOS;
+        if (typeof explicitEvent.requestPermission === 'function') {
+            try {
+                const permissionState = await explicitEvent.requestPermission();
+                if (permissionState === 'granted') {
+                    setNeedsPermission(false);
+                    window.addEventListener('devicemotion', handleMotion);
+                }
+            } catch (error) {
+                console.error(error);
+            }
         }
     };
 
@@ -73,30 +109,19 @@ export default function OnBoardPage({ onCloseOnboardPage }: OnBoardPageProps) {
             }
         };
 
-        const handleMotion = (event: DeviceMotionEvent) => {
-            if (event.accelerationIncludingGravity && worker) {
-                worker.postMessage({
-                    type: 'SENSOR_DATA',
-                    payload: {
-                        accel: {
-                            x: event.accelerationIncludingGravity.x,
-                            y: event.accelerationIncludingGravity.y,
-                            z: event.accelerationIncludingGravity.z
-                        },
-                        timestamp: Date.now()
-                    }
-                });
-            }
-        };
-
-        window.addEventListener('devicemotion', handleMotion);
+        const explicitEvent = DeviceMotionEvent as unknown as DeviceMotionEventiOS;
+        if (typeof explicitEvent.requestPermission === 'function') {
+            setNeedsPermission(true);
+        } else {
+            window.addEventListener('devicemotion', handleMotion);
+        }
 
         return () => {
             window.removeEventListener('devicemotion', handleMotion);
             worker.terminate();
             handleEndPress();
         };
-    }, []);
+    }, [handleMotion]);
     
     return (
         <div className='w-screen h-screen absolute flex flex-col z-40 bg-bg-1 cursor-pointer select-none transition-opacity duration-3000 ease-linear'
@@ -109,6 +134,20 @@ export default function OnBoardPage({ onCloseOnboardPage }: OnBoardPageProps) {
             onTouchStart={handleStartPress}
             onTouchEnd={handleEndPress}
         >
+            {needsPermission && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-bg-1/90 backdrop-blur-sm">
+                    <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            requestPermission();
+                        }}
+                        className="px-8 py-4 border border-text-1 text-text-1 font-mono font-bold uppercase tracking-widest hover:bg-bg-hover-1 active:bg-bg-active-1"
+                    >
+                        Enable Sensors
+                    </button>
+                </div>
+            )}
+
             <div className="w-full h-22 bg-red-500 flex flex-row items-center justify-center">
                 <span className="text-[50px] font-bold font-mono tracking-widest uppercase text-text-1">
                     +0.753
