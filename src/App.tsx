@@ -15,6 +15,7 @@ import OnBoardPage from './pages/OnboardPage.tsx';
 
 function App() {
   // Pages logic
+  const [isStartMenuOpen, setIsStartMenuOpen] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isTrackSelectionOpen, setIsTrackSelectionOpen] = useState(false);
   const [isEndpointPageOpen, setIsEndpointPageOpen] = useState(false);
@@ -36,6 +37,7 @@ function App() {
     // 'finish' point
     setSettingStep(type === 'Sprint' ? 'start' : 'finish');
     
+    setIsTrackSelectionOpen(false);
     // Open the endpoint selection page
     setIsEndpointPageOpen(true);
   };
@@ -52,6 +54,7 @@ function App() {
   };
 
   function handleOnBoardExit() {
+    setIsStartMenuOpen(true);
     setIsOnBoardPageOpen(false);
     setIsEndpointPageOpen(false);
     setIsTrackSelectionOpen(false);
@@ -59,18 +62,36 @@ function App() {
 
   return (
     <div className='relative'>
-      <StartMenuPage onOpenSettings={() => setIsSettingsOpen(true)} onOpenSession={() => setIsTrackSelectionOpen(true)}/>
+      { isStartMenuOpen && (
+        <StartMenuPage 
+          onOpenSettings={() => setIsSettingsOpen(true)} 
+          onOpenSession={() => {
+            setIsTrackSelectionOpen(true)
+            setIsStartMenuOpen(false);
+          }}/>
+      )}
 
       { isSettingsOpen && (
         <SettingsPage onCloseSettings={() => setIsSettingsOpen(false)}/>
       )}
 
       { isTrackSelectionOpen && (
-        <TrackSelectionPage onCloseTrackSelection={() => setIsTrackSelectionOpen(false)} onClickTrackType={handleTrackTypeSelection}/>
+        <TrackSelectionPage 
+          onCloseTrackSelection={() => {
+            setIsStartMenuOpen(true);
+            setIsTrackSelectionOpen(false)
+          }} 
+          onClickTrackType={handleTrackTypeSelection}/>
       )}
       
       { isEndpointPageOpen && (
-        <EndpointSelectionPage onClose={() => {setIsEndpointPageOpen(false)}} onConfirm={handleConfirmGate} title={settingStep === 'start' ? "Set Start Line" : "Set Finish Line"}/>
+        <EndpointSelectionPage 
+          onClose={() => {
+            setIsTrackSelectionOpen(true);
+            setIsEndpointPageOpen(false)
+          }} 
+          onConfirm={handleConfirmGate} 
+          title={settingStep === 'start' ? "Set Start Line" : "Set Finish Line"}/>
       )}
 
       { isOnBoardPageOpen && (

@@ -31,8 +31,10 @@ function Timer({value}: TimerProps) {
 export default function OnBoardPage({ onCloseOnboardPage }: OnBoardPageProps) {
     const [gForce, setGForce] = useState({ x: 0, y: 0 });
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [isPressing, setIsPressing] = useState(false);
 
     const handleStartPress = () => {
+        setIsPressing(true);
         timerRef.current = window.setTimeout(() => {
             if (onCloseOnboardPage) {
                 onCloseOnboardPage();
@@ -41,6 +43,7 @@ export default function OnBoardPage({ onCloseOnboardPage }: OnBoardPageProps) {
     };
 
     const handleEndPress = () => {
+        setIsPressing(false);
         if (timerRef.current) {
             window.clearTimeout(timerRef.current);
             timerRef.current = null;
@@ -64,7 +67,10 @@ export default function OnBoardPage({ onCloseOnboardPage }: OnBoardPageProps) {
     }, []);
 
     return (
-        <div className="w-screen h-screen absolute flex flex-col z-40 bg-bg-1 cursor-pointer select-none"
+        <div className='w-screen h-screen absolute flex flex-col z-40 bg-bg-1 cursor-pointer select-none transition-opacity duration-[3000ms] ease-linear'
+            style={{
+                opacity: isPressing ? 0 : 1
+            }}
             onMouseDown={handleStartPress}
             onMouseUp={handleEndPress}
             onMouseLeave={handleEndPress}
