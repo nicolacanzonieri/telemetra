@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
 interface OnBoardPageProps {
-    onCloseOnboardPage?: () => void;
+    onCloseOnboardPage: () => void;
 }
 
 interface TimerProps {

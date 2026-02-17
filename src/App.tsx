@@ -18,7 +18,7 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isTrackSelectionOpen, setIsTrackSelectionOpen] = useState(false);
   const [isEndpointPageOpen, setIsEndpointPageOpen] = useState(false);
-  const [isOnBoardPageOpen, setIsOnBoardPageOpen] = useState(true);
+  const [isOnBoardPageOpen, setIsOnBoardPageOpen] = useState(false);
 
   // Track logic
   const [trackType, setTrackType] = useState<'Circuit' | 'Sprint' | null>(null);
@@ -51,6 +51,12 @@ function App() {
     }
   };
 
+  function handleOnBoardExit() {
+    setIsOnBoardPageOpen(false);
+    setIsEndpointPageOpen(false);
+    setIsTrackSelectionOpen(false);
+  }
+
   return (
     <div className='relative'>
       <StartMenuPage onOpenSettings={() => setIsSettingsOpen(true)} onOpenSession={() => setIsTrackSelectionOpen(true)}/>
@@ -68,7 +74,7 @@ function App() {
       )}
 
       { isOnBoardPageOpen && (
-        <OnBoardPage/>
+        <OnBoardPage onCloseOnboardPage={handleOnBoardExit}/>
       )}
 
     </div>
