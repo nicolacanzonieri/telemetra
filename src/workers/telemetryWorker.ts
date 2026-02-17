@@ -1,5 +1,3 @@
-// src/workers/telemetryWorker.ts
-
 export type WorkerMessage = 
   | { type: 'START_SESSION'; payload: { trackType: 'Circuit' | 'Sprint' } }
   | { type: 'STOP_SESSION' }
