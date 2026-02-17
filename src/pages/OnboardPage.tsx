@@ -99,7 +99,7 @@ export default function OnBoardPage({ onCloseOnboardPage }: OnBoardPageProps) {
     }, []);
     
     return (
-        <div className='w-screen h-screen absolute flex flex-col z-40 bg-bg-1 cursor-pointer select-none transition-opacity duration-[3000ms] ease-linear'
+        <div className='w-screen h-screen absolute flex flex-col z-40 bg-bg-1 cursor-pointer select-none transition-opacity duration-3000 ease-linear'
             style={{
                 opacity: isPressing ? 0 : 1
             }}
