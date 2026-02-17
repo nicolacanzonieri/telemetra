@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import TelemetryWorker from '../workers/telemetryWorker?worker';
+import type { WorkerResponse } from '../workers/telemetryWorker';
 
 interface OnBoardPageProps {
     onCloseOnboardPage: () => void;
@@ -29,6 +31,7 @@ function Timer({value}: TimerProps) {
 }
 
 export default function OnBoardPage({ onCloseOnboardPage }: OnBoardPageProps) {
+    const workerRef = useRef<Worker | null>(null);
     const [gForce, setGForce] = useState({ x: 0, y: 0 });
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [isPressing, setIsPressing] = useState(false);
@@ -51,21 +54,50 @@ export default function OnBoardPage({ onCloseOnboardPage }: OnBoardPageProps) {
     };
 
     useEffect(() => {
-        let frameId: number;
-        const animate = () => {
-            const x = Math.sin(Date.now() / 400) * 40;
-            const y = Math.cos(Date.now() / 600) * 40;
-            setGForce({ x, y });
-            frameId = requestAnimationFrame(animate);
+        const worker = new TelemetryWorker();
+        workerRef.current = worker;
+
+        worker.postMessage({ 
+            type: 'START_SESSION', 
+            payload: { trackType: 'Circuit' } 
+        });
+
+        worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
+            const message = e.data;
+            if (message.type === 'UPDATE_STATS') {
+                const { currentG } = message.payload;
+                setGForce({
+                    x: currentG.x * 20,
+                    y: currentG.y * 20
+                });
+            }
         };
-        frameId = requestAnimationFrame(animate);
-        
+
+        const handleMotion = (event: DeviceMotionEvent) => {
+            if (event.accelerationIncludingGravity && worker) {
+                worker.postMessage({
+                    type: 'SENSOR_DATA',
+                    payload: {
+                        accel: {
+                            x: event.accelerationIncludingGravity.x,
+                            y: event.accelerationIncludingGravity.y,
+                            z: event.accelerationIncludingGravity.z
+                        },
+                        timestamp: Date.now()
+                    }
+                });
+            }
+        };
+
+        window.addEventListener('devicemotion', handleMotion);
+
         return () => {
-            cancelAnimationFrame(frameId);
+            window.removeEventListener('devicemotion', handleMotion);
+            worker.terminate();
             handleEndPress();
         };
     }, []);
-
+    
     return (
         <div className='w-screen h-screen absolute flex flex-col z-40 bg-bg-1 cursor-pointer select-none transition-opacity duration-[3000ms] ease-linear'
             style={{
