@@ -22,9 +22,9 @@ function App() {
   const [isOnBoardPageOpen, setIsOnBoardPageOpen] = useState(false);
 
   // Track logic
-  const [trackType, setTrackType] = useState<'Circuit' | 'Sprint' | null>(null);
-  const [startGate, setStartGate] = useState<Gate | null>(null);
-  const [finishGate, setFinishGate] = useState<Gate | null>(null);
+  const [_trackType, setTrackType] = useState<'Circuit' | 'Sprint' | null>(null);
+  const [_startGate, setStartGate] = useState<Gate | null>(null);
+  const [_finishGate, setFinishGate] = useState<Gate | null>(null);
   const [settingStep, setSettingStep] = useState<'start' | 'finish'>('finish');
 
   const handleTrackTypeSelection = (type: 'Circuit' | 'Sprint') => {

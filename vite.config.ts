@@ -9,6 +9,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      includeAssets: ['icon.png'],
       manifest: {
         name: 'Telemetra',
         short_name: 'Telemetra',
