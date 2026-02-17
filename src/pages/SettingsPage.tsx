@@ -34,6 +34,24 @@ function SettingsButton({type, label, value, onClick}: SettingsButtonProps) {
 export default function SettingsPage({onCloseSettings}: SettingsPageProps) {
     const { theme, toggleTheme } = useTheme();
 
+    const handleHardReset = async () => {
+        localStorage.clear();
+
+        const databases = await window.indexedDB.databases();
+        databases.forEach(db => {
+            if (db.name) window.indexedDB.deleteDatabase(db.name);
+        });
+
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const registration of registrations) {
+                await registration.unregister();
+            }
+        }
+
+        window.location.reload();
+    };
+
     return(
         <div className='w-screen h-screen absolute flex flex-col z-10 bg-bg-1'>
             <div className='h-header-h flex flex-row items-center justify-end'>
