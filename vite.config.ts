@@ -19,9 +19,9 @@ export default defineConfig({
         orientation: 'landscape',
         icons: [
           {
-            src: 'vite.svg',
-            sizes: '192x192',
-            type: 'image/svg+xml'
+            src: 'icon.png',
+            type: 'image/png',
+            purpose: 'any maskable'
           }
         ]
       }
