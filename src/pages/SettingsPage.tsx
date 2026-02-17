@@ -35,22 +35,39 @@ export default function SettingsPage({onCloseSettings}: SettingsPageProps) {
     const { theme, toggleTheme } = useTheme();
 
     const handleHardReset = async () => {
-        localStorage.clear();
-
-        const databases = await window.indexedDB.databases();
-        databases.forEach(db => {
-            if (db.name) window.indexedDB.deleteDatabase(db.name);
-        });
-
-        if ('serviceWorker' in navigator) {
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            for (const registration of registrations) {
-                await registration.unregister();
+        try {
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (const registration of registrations) {
+                    await registration.unregister();
+                }
             }
-        }
 
-        window.location.reload();
+            if ('caches' in window) {
+                const keys = await caches.keys();
+                await Promise.all(
+                    keys.map((key) => caches.delete(key))
+                );
+            }
+
+            localStorage.clear();
+            sessionStorage.clear();
+
+            if ('indexedDB' in window) {
+                const databases = await window.indexedDB.databases();
+                for (const db of databases) {
+                    if (db.name) {
+                        window.indexedDB.deleteDatabase(db.name);
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Errore durante il reset:", e);
+        } finally {
+            window.location.href = window.location.origin; 
+        }
     };
+
 
     return(
         <div className='w-screen h-screen absolute flex flex-col z-10 bg-bg-1'>
