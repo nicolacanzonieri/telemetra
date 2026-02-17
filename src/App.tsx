@@ -53,13 +53,6 @@ function App() {
     }
   };
 
-  function handleOnBoardExit() {
-    setIsStartMenuOpen(true);
-    setIsOnBoardPageOpen(false);
-    setIsEndpointPageOpen(false);
-    setIsTrackSelectionOpen(false);
-  }
-
   return (
     <div className='relative'>
       { isStartMenuOpen && (
@@ -95,7 +88,12 @@ function App() {
       )}
 
       { isOnBoardPageOpen && (
-        <OnBoardPage onCloseOnboardPage={handleOnBoardExit}/>
+        <OnBoardPage 
+          onCloseOnboardPage={() => {
+            setIsStartMenuOpen(true);
+            setIsEndpointPageOpen(false);
+            setIsOnBoardPageOpen(false);
+          }}/>
       )}
 
     </div>
