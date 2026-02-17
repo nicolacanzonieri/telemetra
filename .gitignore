@@ -27,5 +27,6 @@ dist-ssr
 repo_txt.txt
 repo-to-txt.py
 repo-to-txt.sh
-commit-txt.py
 commit_txt.txt
+commit-txt.py
+commit-txt.sh
