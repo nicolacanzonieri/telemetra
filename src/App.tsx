@@ -47,6 +47,7 @@ function App() {
     } else {
       setFinishGate({ p1, p2 });
       setIsEndpointPageOpen(false);
+      setIsOnBoardPageOpen(true);
     }
   };
 
