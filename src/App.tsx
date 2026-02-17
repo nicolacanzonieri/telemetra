@@ -11,12 +11,14 @@ import StartMenuPage from './pages/StartMenuPage.tsx'
 import SettingsPage from './pages/SettingsPage.tsx'
 import TrackSelectionPage from './pages/TrackSelectionPage.tsx';
 import EndpointSelectionPage from './pages/EndpointSelectionPage.tsx';
+import OnBoardPage from './pages/OnboardPage.tsx';
 
 function App() {
   // Pages logic
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isTrackSelectionOpen, setIsTrackSelectionOpen] = useState(false);
   const [isEndpointPageOpen, setIsEndpointPageOpen] = useState(false);
+  const [isOnBoardPageOpen, setIsOnBoardPageOpen] = useState(true);
 
   // Track logic
   const [trackType, setTrackType] = useState<'Circuit' | 'Sprint' | null>(null);
@@ -62,6 +64,10 @@ function App() {
       
       { isEndpointPageOpen && (
         <EndpointSelectionPage onClose={() => {setIsEndpointPageOpen(false)}} onConfirm={handleConfirmGate} title={settingStep === 'start' ? "Set Start Line" : "Set Finish Line"}/>
+      )}
+
+      { isOnBoardPageOpen && (
+        <OnBoardPage/>
       )}
 
     </div>
