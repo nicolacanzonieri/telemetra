@@ -22,8 +22,10 @@ export default function OnBoardPage() {
 
     return (
         <div className="w-screen h-screen absolute flex flex-col z-40 bg-bg-1">
-            <div className="w-full h-25 bg-red-500">
-
+            <div className="w-full h-25 bg-red-500 flex flex-row items-center justify-center">
+                <span className="text-[50px] font-bold font-mono tracking-widest uppercase text-text-1">
+                    +0.753
+                </span>
             </div>
             <div className="w-full flex-1">
                 <div className="w-full h-[50%] flex flex-col items-start justify-start p-p-s">
