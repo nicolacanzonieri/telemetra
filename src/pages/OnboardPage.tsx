@@ -40,7 +40,6 @@ export default function OnBoardPage({ onCloseOnboardPage }: OnBoardPageProps) {
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [isPressing, setIsPressing] = useState(false);
     const [needsPermission, setNeedsPermission] = useState(false);
-    
     const isCalibratedRef = useRef(false);
     const calibratedRef = useRef({x: 0, y: 0});
 
