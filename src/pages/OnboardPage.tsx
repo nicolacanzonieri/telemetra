@@ -109,13 +109,13 @@ export default function OnBoardPage({ onCloseOnboardPage }: OnBoardPageProps) {
             if (message.type === 'UPDATE_STATS' && isCalibrated) {
                 const { currentG } = message.payload;
                 setGForce({
-                    x: currentG.x * 20 - base_x,
-                    y: currentG.y * 20 - base_y
+                    x: (currentG.x - base_x) * 20,
+                    y: (currentG.y - base_y) * 20
                 });
             } else if (message.type === 'UPDATE_STATS' && !isCalibrated) {
                 const { currentG } = message.payload;
-                base_x = currentG.x * 20;
-                base_y = currentG.y * 20;
+                base_x = currentG.x;
+                base_y = currentG.y;
                 setIsCalibrated(true);
             }
         };
