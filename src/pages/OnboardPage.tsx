@@ -41,7 +41,7 @@ export default function OnBoardPage({ onCloseOnboardPage }: OnBoardPageProps) {
     const [isPressing, setIsPressing] = useState(false);
     const [needsPermission, setNeedsPermission] = useState(false);
     
-    const [isCalibrated, setIsCalibrated] = useState(false);
+    const isCalibratedRef = useRef(false);
     const calibratedRef = useRef({x: 0, y: 0});
 
     const handleStartPress = () => {
@@ -105,17 +105,17 @@ export default function OnBoardPage({ onCloseOnboardPage }: OnBoardPageProps) {
 
         worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
             const message = e.data;
-            if (message.type === 'UPDATE_STATS' && isCalibrated) {
+            if (message.type === 'UPDATE_STATS' && isCalibratedRef.current) {
                 const { currentG } = message.payload;
                 setGForce({
                     x: (currentG.x - calibratedRef.current.x) * 20,
                     y: (currentG.y - calibratedRef.current.y) * -20
                 });
-            } else if (message.type === 'UPDATE_STATS' && !isCalibrated) {
+            } else if (message.type === 'UPDATE_STATS' && !isCalibratedRef.current) {
                 const { currentG } = message.payload;
                 calibratedRef.current.x = currentG.x;
                 calibratedRef.current.y = currentG.y;
-                setIsCalibrated(true);
+                isCalibratedRef.current = true;
             }
         };
 
