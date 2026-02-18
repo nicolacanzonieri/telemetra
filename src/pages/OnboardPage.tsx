@@ -41,7 +41,7 @@ export default function OnBoardPage({ onCloseOnboardPage }: OnBoardPageProps) {
     const [isPressing, setIsPressing] = useState(false);
     const [needsPermission, setNeedsPermission] = useState(false);
     
-    const [isCalibrated, _setIsCalibrated] = useState(false);
+    const [isCalibrated, setIsCalibrated] = useState(false);
     let base_x: number;
     let base_y: number;
 
@@ -116,6 +116,7 @@ export default function OnBoardPage({ onCloseOnboardPage }: OnBoardPageProps) {
                 const { currentG } = message.payload;
                 base_x = currentG.x * 20;
                 base_y = currentG.y * 20;
+                setIsCalibrated(true);
             }
         };
 
