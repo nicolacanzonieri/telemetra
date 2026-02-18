@@ -1,5 +1,19 @@
 import Dexie, { type Table } from 'dexie';
 
+export interface Gate {
+  p1: { lat: number; lng: number };
+  p2: { lat: number; lng: number };
+}
+
+export interface Track {
+  id?: number;
+  name: string;
+  type: 'Circuit' | 'Sprint';
+  startGate?: Gate;
+  finishGate: Gate;
+  createdAt: number;
+}
+
 export interface Session {
   id?: number;
   date: number;
@@ -26,8 +40,8 @@ export class TelemetraDB extends Dexie {
 
   constructor() {
     super('TelemetraDB');
-    
     this.version(1).stores({
+      tracks: '++id, name, type',
       sessions: '++id, date, trackName, bestLapTime',
       samples: '++id, sessionId, timestamp'
     });
