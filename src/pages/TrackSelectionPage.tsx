@@ -1,14 +1,18 @@
+import { useLiveQuery } from "dexie-react-hooks";
 import { useState, type ReactNode } from "react";
+import { db, type Track } from "../db/database";
 import HeaderButton from "../components/HeaderButton";
 
 interface TrackSelectionPageProps {
     onCloseTrackSelection: () => void;
     onClickTrackType: (type: 'Circuit' | 'Sprint') => void;
+    onSelectSavedTrack: (track: Track) => void;
 }
 
-// interface TrackButtonProps {
-//     trackName: string;
-// }
+interface TrackButtonProps {
+    trackName: string;
+    onClick: () => void;
+}
 
 interface TrackTypeButtonProps {
     label: string;
@@ -16,13 +20,13 @@ interface TrackTypeButtonProps {
     onClick: () => void;
 }
 
-// function TrackButton({trackName}: TrackButtonProps) {
-//     return (
-//         <button className="w-80 h-20 flex flex-row items-center justify-center shrink-0 mb-5 p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
-//             <span className="text-sm font-mono tracking-widest uppercase text-text-1">{trackName}</span>
-//         </button>
-//     );
-// }
+function TrackButton({trackName, onClick}: TrackButtonProps) {
+    return (
+        <button onClick={onClick} className="w-80 h-20 flex flex-row items-center justify-center shrink-0 mb-5 p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
+            <span className="text-sm font-mono tracking-widest uppercase text-text-1">{trackName}</span>
+        </button>
+    );
+}
 
 function TrackTypeButton({label, children, onClick}: TrackTypeButtonProps) {
     return (
@@ -33,8 +37,12 @@ function TrackTypeButton({label, children, onClick}: TrackTypeButtonProps) {
     );
 }
 
-export default function TrackSelectionPage({onCloseTrackSelection, onClickTrackType}: TrackSelectionPageProps) {
+export default function TrackSelectionPage({onCloseTrackSelection, onClickTrackType, onSelectSavedTrack}: TrackSelectionPageProps) {
     const [isTrackTypeMenuOpen, setIsTrackTypeMenuOpen] = useState(false);
+
+    const savedTracks = useLiveQuery(
+        () => db.tracks.orderBy('name').toArray()
+    );
 
     return(
         <div className='w-screen h-screen absolute flex flex-col z-20 overflow-hidden bg-bg-1'>
@@ -64,7 +72,9 @@ export default function TrackSelectionPage({onCloseTrackSelection, onClickTrackT
                     <span className="mb-5 text-text-1 text-xl font-mono tracking-widest uppercase">Saved tracks</span>
                     
                     <div className="w-full min-h-0 overflow-y-auto flex flex-col flex-1 items-center justify-start no-scrollbar">
-                        {/* Saved tracks here... */}
+                        {savedTracks?.map((track) => (
+                            <TrackButton key={track.id} trackName={track.name} onClick={() => onSelectSavedTrack(track)}/>
+                        ))}
                     </div>
                 </div>
             )}

@@ -18,7 +18,7 @@ function App() {
   // Pages logic
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isTrackSelectionOpen, setIsTrackSelectionOpen] = useState(false);
+  const [isTrackSelectionOpen, setIsTrackSelectionPageOpen] = useState(false);
   const [isEndpointPageOpen, setIsEndpointPageOpen] = useState(false);
   const [isOnBoardPageOpen, setIsOnBoardPageOpen] = useState(false);
 
@@ -38,7 +38,7 @@ function App() {
     // 'finish' point
     setSettingStep(type === 'Sprint' ? 'start' : 'finish');
     
-    setIsTrackSelectionOpen(false);
+    setIsTrackSelectionPageOpen(false);
     // Open the endpoint selection page
     setIsEndpointPageOpen(true);
   };
@@ -69,13 +69,18 @@ function App() {
     await db.tracks.add(newTrack);
   };
 
+  const handleSelectedTrack = async (track: Track) => {
+    setIsTrackSelectionPageOpen(false);
+    setIsOnBoardPageOpen(true);
+  };
+
   return (
     <div className='relative'>
       { isStartMenuOpen && (
         <StartMenuPage 
           onOpenSettings={() => setIsSettingsOpen(true)} 
           onOpenSession={() => {
-            setIsTrackSelectionOpen(true)
+            setIsTrackSelectionPageOpen(true)
             setIsStartMenuOpen(false);
           }}/>
       )}
@@ -88,15 +93,16 @@ function App() {
         <TrackSelectionPage 
           onCloseTrackSelection={() => {
             setIsStartMenuOpen(true);
-            setIsTrackSelectionOpen(false)
+            setIsTrackSelectionPageOpen(false)
           }} 
-          onClickTrackType={handleTrackTypeSelection}/>
+          onClickTrackType={handleTrackTypeSelection}
+          onSelectSavedTrack={handleSelectedTrack}/>
       )}
       
       { isEndpointPageOpen && (
         <EndpointSelectionPage 
           onClose={() => {
-            setIsTrackSelectionOpen(true);
+            setIsTrackSelectionPageOpen(true);
             setIsEndpointPageOpen(false)
           }} 
           onConfirm={handleConfirmGate} 
