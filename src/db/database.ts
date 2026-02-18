@@ -1,51 +1,52 @@
 import Dexie, { type Table } from 'dexie';
 
 export interface Gate {
-  p1: { lat: number; lng: number };
-  p2: { lat: number; lng: number };
+    p1: { lat: number; lng: number };
+    p2: { lat: number; lng: number };
 }
 
 export interface Track {
-  id?: number;
-  name: string;
-  type: 'Circuit' | 'Sprint';
-  startGate?: Gate;
-  finishGate: Gate;
-  createdAt: number;
+    id?: number;
+    name: string;
+    type: 'Circuit' | 'Sprint';
+    startGate?: Gate;
+    finishGate: Gate;
+    createdAt: number;
 }
 
 export interface Session {
-  id?: number;
-  date: number;
-  trackName: string;
-  trackType: 'Circuit' | 'Sprint';
-  bestLapTime: number | null;
+    id?: number;
+    date: number;
+    trackName: string;
+    trackType: 'Circuit' | 'Sprint';
+    bestLapTime: number | null;
 }
 
 export interface Sample {
-  id?: number;
-  sessionId: number;
-  timestamp: number;
-  lat: number;
-  lng: number;
-  gLat: number;
-  gLong: number;
-  delta: number;
-  speed: number;
+    id?: number;
+    sessionId: number;
+    timestamp: number;
+    lat: number;
+    lng: number;
+    gLat: number;
+    gLong: number;
+    delta: number;
+    speed: number;
 }
 
 export class TelemetraDB extends Dexie {
-  sessions!: Table<Session>;
-  samples!: Table<Sample>;
+    tracks!: Table<Track>;
+    sessions!: Table<Session>;
+    samples!: Table<Sample>;
 
-  constructor() {
-    super('TelemetraDB');
-    this.version(1).stores({
-      tracks: '++id, name, type',
-      sessions: '++id, date, trackName, bestLapTime',
-      samples: '++id, sessionId, timestamp'
-    });
-  }
+    constructor() {
+        super('TelemetraDB');
+        this.version(1).stores({
+            tracks: '++id, name, type',
+            sessions: '++id, date, trackName, bestLapTime',
+            samples: '++id, sessionId, timestamp'
+        });
+    }
 }
 
 export const db = new TelemetraDB();

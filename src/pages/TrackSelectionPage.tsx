@@ -64,13 +64,7 @@ export default function TrackSelectionPage({onCloseTrackSelection, onClickTrackT
                     <span className="mb-5 text-text-1 text-xl font-mono tracking-widest uppercase">Saved tracks</span>
                     
                     <div className="w-full min-h-0 overflow-y-auto flex flex-col flex-1 items-center justify-start no-scrollbar">
-                        <TrackButton trackName={"Monza"}/>
-                        <TrackButton trackName={"Mugello"}/>
-                        <TrackButton trackName={"Imola"}/>
-                        <TrackButton trackName={"Misano"}/>
-                        <TrackButton trackName={"Spa"}/>
-                        <TrackButton trackName={"Nürburgring"}/>
-                        <TrackButton trackName={"Hockenheimring"}/>
+                        {/* Saved tracks here... */}
                     </div>
                 </div>
             )}

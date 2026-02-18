@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { LatLng } from 'leaflet';
+import { db, type Track } from './db/database.ts'
 
 interface Gate {
   p1: LatLng;
@@ -42,8 +43,21 @@ function App() {
     setIsEndpointPageOpen(true);
   };
 
-  const handleConfirmGate = (p1: LatLng, p2: LatLng) => {
+  const handleConfirmGate = async (p1: LatLng, p2: LatLng) => {
+    const trackName = prompt("ENTER TRACK NAME:") || "New Track";
+
+    const newTrack: Track = {
+      name: trackName.toUpperCase(),
+      type: _trackType!,
+      finishGate: { 
+        p1: { lat: p1.lat, lng: p1.lng }, 
+        p2: { lat: p2.lat, lng: p2.lng } 
+      },
+      createdAt: Date.now()
+    };
+
     if (settingStep === 'start') {
+      newTrack.startGate = {p1, p2};
       setStartGate({ p1, p2 });
       setSettingStep('finish');
     } else {
@@ -51,6 +65,8 @@ function App() {
       setIsEndpointPageOpen(false);
       setIsOnBoardPageOpen(true);
     }
+
+    await db.tracks.add(newTrack);
   };
 
   return (
