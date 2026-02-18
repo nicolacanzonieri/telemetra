@@ -32,7 +32,7 @@ export default function App() {
   // When closing settings...
   const handleCloseSettings = () => {
     setIsStartMenuOpen(true);
-    setIsStartMenuOpen(false);
+    setIsSettingsOpen(false);
   }
 
   // When opening session...
