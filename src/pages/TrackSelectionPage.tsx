@@ -16,13 +16,13 @@ interface TrackTypeButtonProps {
     onClick: () => void;
 }
 
-function TrackButton({trackName}: TrackButtonProps) {
-    return (
-        <button className="w-80 h-20 flex flex-row items-center justify-center shrink-0 mb-5 p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
-            <span className="text-sm font-mono tracking-widest uppercase text-text-1">{trackName}</span>
-        </button>
-    );
-}
+// function TrackButton({trackName}: TrackButtonProps) {
+//     return (
+//         <button className="w-80 h-20 flex flex-row items-center justify-center shrink-0 mb-5 p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
+//             <span className="text-sm font-mono tracking-widest uppercase text-text-1">{trackName}</span>
+//         </button>
+//     );
+// }
 
 function TrackTypeButton({label, children, onClick}: TrackTypeButtonProps) {
     return (
