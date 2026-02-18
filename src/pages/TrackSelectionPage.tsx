@@ -6,9 +6,9 @@ interface TrackSelectionPageProps {
     onClickTrackType: (type: 'Circuit' | 'Sprint') => void;
 }
 
-interface TrackButtonProps {
-    trackName: string;
-}
+// interface TrackButtonProps {
+//     trackName: string;
+// }
 
 interface TrackTypeButtonProps {
     label: string;
