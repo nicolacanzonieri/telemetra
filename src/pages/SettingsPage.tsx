@@ -34,6 +34,7 @@ function SettingsButton({type, label, value, onClick}: SettingsButtonProps) {
 export default function SettingsPage({onCloseSettings}: SettingsPageProps) {
     const { theme, toggleTheme } = useTheme();
 
+    // Delete all data and update
     const handleHardReset = async () => {
         try {
             if ('serviceWorker' in navigator) {
@@ -62,7 +63,7 @@ export default function SettingsPage({onCloseSettings}: SettingsPageProps) {
                 }
             }
         } catch (e) {
-            console.error("Errore durante il reset:", e);
+            console.error("Error during hard reset:", e);
         } finally {
             window.location.href = window.location.origin; 
         }
