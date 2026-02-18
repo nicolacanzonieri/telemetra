@@ -1,11 +1,6 @@
 import { useState } from 'react';
 import { LatLng } from 'leaflet';
-import { db, type Track } from './db/database.ts'
-
-interface Gate {
-  p1: LatLng;
-  p2: LatLng;
-}
+import { db, type Track, type Gate } from './db/database.ts'
 
 // PAGES
 import StartMenuPage from './pages/StartMenuPage.tsx'
@@ -14,21 +9,46 @@ import TrackSelectionPage from './pages/TrackSelectionPage.tsx';
 import EndpointSelectionPage from './pages/EndpointSelectionPage.tsx';
 import OnBoardPage from './pages/OnboardPage.tsx';
 
-function App() {
-  // Pages logic
+export default function App() {
+  // PAGES STATES
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isTrackSelectionOpen, setIsTrackSelectionPageOpen] = useState(false);
   const [isEndpointPageOpen, setIsEndpointPageOpen] = useState(false);
   const [isOnBoardPageOpen, setIsOnBoardPageOpen] = useState(false);
 
-  // Track logic
+  // TRACK LOGIC
   const [_trackType, setTrackType] = useState<'Circuit' | 'Sprint' | null>(null);
   const [_startGate, setStartGate] = useState<Gate | null>(null);
   const [_finishGate, setFinishGate] = useState<Gate | null>(null);
-  const [settingStep, setSettingStep] = useState<'start' | 'finish'>('finish');
+  const [gateStep, setSettingStep] = useState<'start' | 'finish'>('finish');
 
-  const handleTrackTypeSelection = (type: 'Circuit' | 'Sprint') => {
+  // When opening settings...
+  const handleOpenSettings = () => {
+    setIsSettingsOpen(true);
+    setIsStartMenuOpen(false);
+  };
+
+  // When closing settings...
+  const handleCloseSettings = () => {
+    setIsStartMenuOpen(true);
+    setIsStartMenuOpen(false);
+  }
+
+  // When opening session...
+  const handleOpenSession = () => {
+    setIsTrackSelectionPageOpen(true);
+    setIsStartMenuOpen(false);
+  }
+
+  // When closing the track selection menu...
+  const handleCloseTrackSelection = () => {
+    setIsStartMenuOpen(true);
+    setIsTrackSelectionPageOpen(false);
+  }
+
+  // When creating a new track and then selecting a track type...
+  const handleSelectTrackType = (type: 'Circuit' | 'Sprint') => {
     setTrackType(type);
     setStartGate(null);
     setFinishGate(null);
@@ -38,11 +58,31 @@ function App() {
     // 'finish' point
     setSettingStep(type === 'Sprint' ? 'start' : 'finish');
     
-    setIsTrackSelectionPageOpen(false);
     // Open the endpoint selection page
+    setIsTrackSelectionPageOpen(false);
     setIsEndpointPageOpen(true);
   };
 
+  // When selecting a saved track...
+  const handleSelectSavedTrack = async (_track: Track) => {
+    setIsTrackSelectionPageOpen(false);
+    setIsOnBoardPageOpen(true);
+  };
+
+  // When closing the endpoint page...
+  const handleCloseEndpointPage = () => {
+    setIsTrackSelectionPageOpen(true);
+    setIsEndpointPageOpen(false);
+  }
+
+  // When closing onboard page...
+  const handleCloseOnboardPage = () => {
+    setIsStartMenuOpen(true);
+    setIsEndpointPageOpen(false);
+    setIsOnBoardPageOpen(false);
+  }
+
+  // When conferming gate...
   const handleConfirmGate = async (p1: LatLng, p2: LatLng) => {
     const trackName = prompt("ENTER TRACK NAME:") || "New Track";
 
@@ -56,7 +96,7 @@ function App() {
       createdAt: Date.now()
     };
 
-    if (settingStep === 'start') {
+    if (gateStep === 'start') {
       newTrack.startGate = {p1, p2};
       setStartGate({ p1, p2 });
       setSettingStep('finish');
@@ -69,57 +109,49 @@ function App() {
     await db.tracks.add(newTrack);
   };
 
-  const handleSelectedTrack = async (_track: Track) => {
-    setIsTrackSelectionPageOpen(false);
-    setIsOnBoardPageOpen(true);
-  };
-
   return (
     <div className='relative'>
+
+      {/* MAIN MENU PAGE */}
       { isStartMenuOpen && (
         <StartMenuPage 
-          onOpenSettings={() => setIsSettingsOpen(true)} 
-          onOpenSession={() => {
-            setIsTrackSelectionPageOpen(true)
-            setIsStartMenuOpen(false);
-          }}/>
+          onOpenSettings={handleOpenSettings} 
+          onOpenSession={handleOpenSession}
+        />
       )}
 
+      {/* SETTINGS PAGE */}
       { isSettingsOpen && (
-        <SettingsPage onCloseSettings={() => setIsSettingsOpen(false)}/>
+        <SettingsPage 
+          onCloseSettings={handleCloseSettings}
+        />
       )}
 
+      {/* TRACK SELECTION PAGE */}
       { isTrackSelectionOpen && (
         <TrackSelectionPage 
-          onCloseTrackSelection={() => {
-            setIsStartMenuOpen(true);
-            setIsTrackSelectionPageOpen(false)
-          }} 
-          onClickTrackType={handleTrackTypeSelection}
-          onSelectSavedTrack={handleSelectedTrack}/>
+          onCloseTrackSelection={handleCloseTrackSelection}
+          onClickTrackType={handleSelectTrackType}
+          onSelectSavedTrack={handleSelectSavedTrack}
+        />
       )}
       
+      {/* TRACK ENDPOINTS PAGE */}
       { isEndpointPageOpen && (
         <EndpointSelectionPage 
-          onClose={() => {
-            setIsTrackSelectionPageOpen(true);
-            setIsEndpointPageOpen(false)
-          }} 
+          title={gateStep === 'start' ? "Set Start Line" : "Set Finish Line"}
+          onClose={handleCloseEndpointPage}
           onConfirm={handleConfirmGate} 
-          title={settingStep === 'start' ? "Set Start Line" : "Set Finish Line"}/>
+        />
       )}
 
+      {/* ONBOARD PAGE */}
       { isOnBoardPageOpen && (
         <OnBoardPage 
-          onCloseOnboardPage={() => {
-            setIsStartMenuOpen(true);
-            setIsEndpointPageOpen(false);
-            setIsOnBoardPageOpen(false);
-          }}/>
+          onCloseOnboardPage={handleCloseOnboardPage}
+        />
       )}
 
     </div>
   )
 }
-
-export default App
