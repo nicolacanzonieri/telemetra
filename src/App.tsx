@@ -69,7 +69,7 @@ function App() {
     await db.tracks.add(newTrack);
   };
 
-  const handleSelectedTrack = async (track: Track) => {
+  const handleSelectedTrack = async (_track: Track) => {
     setIsTrackSelectionPageOpen(false);
     setIsOnBoardPageOpen(true);
   };
