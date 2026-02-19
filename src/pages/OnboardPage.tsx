@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import TelemetryWorker from '../workers/telemetryWorker?worker';
 import type { WorkerResponse } from '../workers/telemetryWorker';
-import { type Gate } from "../db/database.tsx";
+import { type Gate } from "../db/database.ts";
 
 interface OnBoardPageProps {
     startGate: Gate | null;
