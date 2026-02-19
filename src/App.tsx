@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LatLng } from 'leaflet';
-import { db, type Track, type Gate } from './db/database.ts'
+import { db, type Track } from './db/database.ts'
 
 // PAGES
 import StartMenuPage from './pages/StartMenuPage.tsx'
@@ -8,6 +8,7 @@ import SettingsPage from './pages/SettingsPage.tsx'
 import TrackSelectionPage from './pages/TrackSelectionPage.tsx';
 import EndpointSelectionPage from './pages/EndpointSelectionPage.tsx';
 import OnBoardPage from './pages/OnboardPage.tsx';
+import { useTrack } from './hooks/useTrack.tsx';
 
 export default function App() {
   // PAGES STATES
@@ -18,9 +19,8 @@ export default function App() {
   const [isOnBoardPageOpen, setIsOnBoardPageOpen] = useState(false);
 
   // TRACK LOGIC
-  const [_trackType, setTrackType] = useState<'Circuit' | 'Sprint' | null>(null);
-  const [_startGate, setStartGate] = useState<Gate | null>(null);
-  const [_finishGate, setFinishGate] = useState<Gate | null>(null);
+  const {startGate, setStartGate, setFinishGate} = useTrack();
+  const [trackType, setTrackType] = useState<'Circuit' | 'Sprint' | null>(null);
   const [gateStep, setSettingStep] = useState<'start' | 'finish'>('finish');
 
   // When opening settings...
@@ -84,29 +84,34 @@ export default function App() {
 
   // When conferming gate...
   const handleConfirmGate = async (p1: LatLng, p2: LatLng) => {
-    const trackName = prompt("ENTER TRACK NAME:") || "New Track";
-
-    const newTrack: Track = {
-      name: trackName.toUpperCase(),
-      type: _trackType!,
-      finishGate: { 
-        p1: { lat: p1.lat, lng: p1.lng }, 
-        p2: { lat: p2.lat, lng: p2.lng } 
-      },
-      createdAt: Date.now()
-    };
-
     if (gateStep === 'start') {
-      newTrack.startGate = {p1, p2};
       setStartGate({ p1, p2 });
       setSettingStep('finish');
     } else {
       setFinishGate({ p1, p2 });
+
+      const trackName = prompt("ENTER TRACK NAME:") || "New Track";
+      const newTrack: Track = {
+        name: trackName.toUpperCase(),
+        type: trackType!,
+        finishGate: { 
+          p1: { lat: p1.lat, lng: p1.lng }, 
+          p2: { lat: p2.lat, lng: p2.lng } 
+        },
+        createdAt: Date.now()
+      };
+
+      if (trackType === 'Sprint' && newTrack.startGate != null&& startGate != null) {
+        newTrack.startGate.p1 = startGate.p1;
+        newTrack.startGate.p2 = startGate.p2;
+      }
+
+      await db.tracks.add(newTrack);
+
       setIsEndpointPageOpen(false);
       setIsOnBoardPageOpen(true);
     }
 
-    await db.tracks.add(newTrack);
   };
 
   return (
