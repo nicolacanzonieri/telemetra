@@ -37,6 +37,7 @@ function Timer({value}: TimerProps) {
     );
 }
 
+// @ts-ignore
 export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage }: OnBoardPageProps) {
     const workerRef = useRef<Worker | null>(null);
     const [gForce, setGForce] = useState({ x: 0, y: 0 });
@@ -159,23 +160,6 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
                     </button>
                 </div>
             )}
-
-            {/* DEBUG PURPOSE ONLY!!! */}
-            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-bg-1/70">
-                { startGate != null && (
-                    <span className="text-text-1">{startGate.p1.lat} {startGate.p1.lng} {startGate.p2.lat} {startGate.p2.lng}</span>
-                )}
-                { startGate == null && (
-                    <span className="text-text-1">START GATE HERE</span>
-                )}
-
-                { finishGate != null && (
-                    <span className="text-text-1">{finishGate.p1.lat} {finishGate.p1.lng} {finishGate.p2.lat} {finishGate.p2.lng}</span>
-                )}
-                { finishGate == null && (
-                    <span className="text-text-1">FINISH GATE HERE</span>
-                )}
-            </div>
 
             <div className="w-full h-22 bg-red-500 flex flex-row items-center justify-center">
                 <span className="text-[50px] font-bold font-mono tracking-widest uppercase text-text-1">
