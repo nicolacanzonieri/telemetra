@@ -50,7 +50,7 @@ export default function EndpointSelectionPage({ onClose, onConfirm, title }: Map
     }
 
     // Geocoding search using Nominatim OpenStreetMap API
-    const handleSearch = async (e: React.FormEvent) => {
+    const handleSearch = async (e: React.SubmitEvent) => {
         e.preventDefault();
         if (!searchQuery || !mapInstance) return;
         
