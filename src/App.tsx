@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LatLng } from 'leaflet';
-import { db, type Track } from './db/database.ts'
+import { db, type Track, type Gate } from './db/database.ts'
 
 // PAGES
 import StartMenuPage from './pages/StartMenuPage.tsx'
@@ -8,7 +8,6 @@ import SettingsPage from './pages/SettingsPage.tsx'
 import TrackSelectionPage from './pages/TrackSelectionPage.tsx';
 import EndpointSelectionPage from './pages/EndpointSelectionPage.tsx';
 import OnBoardPage from './pages/OnboardPage.tsx';
-import { useTrack } from './hooks/useTrack.tsx';
 
 export default function App() {
   // PAGES STATES
@@ -19,7 +18,8 @@ export default function App() {
   const [isOnBoardPageOpen, setIsOnBoardPageOpen] = useState(false);
 
   // TRACK LOGIC
-  const {startGate, setStartGate, setFinishGate} = useTrack();
+  const [startGate, setStartGate] = useState<Gate | null>(null);
+  const [finishGate, setFinishGate] = useState<Gate | null>(null);
   const [trackType, setTrackType] = useState<'Circuit' | 'Sprint' | null>(null);
   const [gateStep, setSettingStep] = useState<'start' | 'finish'>('finish');
 
@@ -101,7 +101,7 @@ export default function App() {
         createdAt: Date.now()
       };
 
-      if (trackType === 'Sprint' && newTrack.startGate != null&& startGate != null) {
+      if (trackType === 'Sprint' && newTrack.startGate != null && startGate != null) {
         newTrack.startGate.p1 = startGate.p1;
         newTrack.startGate.p2 = startGate.p2;
       }
@@ -153,6 +153,8 @@ export default function App() {
       {/* ONBOARD PAGE */}
       { isOnBoardPageOpen && (
         <OnBoardPage 
+          startGate={startGate}
+          finishGate={finishGate}
           onCloseOnboardPage={handleCloseOnboardPage}
         />
       )}

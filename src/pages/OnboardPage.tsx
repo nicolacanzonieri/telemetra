@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import TelemetryWorker from '../workers/telemetryWorker?worker';
 import type { WorkerResponse } from '../workers/telemetryWorker';
-import { useTrack } from "../hooks/useTrack";
+import { type Gate } from "../db/database.tsx";
 
 interface OnBoardPageProps {
+    startGate: Gate | null;
+    finishGate: Gate | null;
     onCloseOnboardPage: () => void;
 }
 
@@ -35,9 +37,8 @@ function Timer({value}: TimerProps) {
     );
 }
 
-export default function OnBoardPage({ onCloseOnboardPage }: OnBoardPageProps) {
+export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage }: OnBoardPageProps) {
     const workerRef = useRef<Worker | null>(null);
-    const {startGate, finishGate} = useTrack();
     const [gForce, setGForce] = useState({ x: 0, y: 0 });
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [isPressing, setIsPressing] = useState(false);
