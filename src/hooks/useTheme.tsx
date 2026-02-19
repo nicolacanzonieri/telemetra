@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 export function useTheme() {
     const [theme, setTheme] = useState(() => {
         const savedTheme = localStorage.getItem('telemetra-theme');
-        return savedTheme || document.documentElement.getAttribute('data-theme') || 'light';
+        return savedTheme || document.documentElement.getAttribute('data-theme') || 'dark';
     });
 
     // This effect ensures the document's 'data-theme' attribute and localStorage 
