@@ -23,7 +23,9 @@ interface TrackTypeButtonProps {
 function TrackButton({trackName, onClick}: TrackButtonProps) {
     return (
         <button onClick={onClick} className="w-80 h-20 flex flex-row items-center justify-center shrink-0 mb-5 p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
-            <span className="text-sm font-mono tracking-widest uppercase text-text-1">{trackName}</span>
+            <span className="text-sm font-mono tracking-widest uppercase text-text-1">
+                {trackName}
+            </span>
         </button>
     );
 }
@@ -32,7 +34,9 @@ function TrackTypeButton({label, children, onClick}: TrackTypeButtonProps) {
     return (
         <div onClick={onClick} className="w-80 h-40 flex flex-col items-center justify-center p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
             {children}
-            <span className="text-sm font-mono tracking-widest uppercase text-text-1">{label}</span>
+            <span className="text-sm font-mono tracking-widest uppercase text-text-1">
+                {label}
+            </span>
         </div>
     );
 }
@@ -40,6 +44,7 @@ function TrackTypeButton({label, children, onClick}: TrackTypeButtonProps) {
 export default function TrackSelectionPage({onCloseTrackSelection, onClickTrackType, onSelectSavedTrack}: TrackSelectionPageProps) {
     const [isTrackTypeMenuOpen, setIsTrackTypeMenuOpen] = useState(false);
 
+    // Get saved tracks
     const savedTracks = useLiveQuery(
         () => db.tracks.orderBy('name').toArray()
     );
@@ -60,17 +65,22 @@ export default function TrackSelectionPage({onCloseTrackSelection, onClickTrackT
                 )}
             </div>
     
-            {/* Track Selection */}
+            {/* TRACK SELECTION MENU */}
             {!isTrackTypeMenuOpen && (
                 <div id="track-list-menu" className='min-h-0 flex flex-col flex-1 items-center justify-start gap-gap-md bg-bg-1'>
-                    <span className="mb-10 text-text-1 text-3xl font-mono tracking-widest uppercase">Track Selection</span>
+                    <span className="mb-10 text-text-1 text-3xl font-mono tracking-widest uppercase">
+                        Track Selection
+                    </span>
                     
-                    <button onClick={() => setIsTrackTypeMenuOpen(true)} className="w-80 h-20 flex flex-row items-center justify-center mb-5 p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
-                        <span className="text-sm font-mono tracking-widest uppercase text-text-1">Add track</span>
+                    <button onClick={() => setIsTrackTypeMenuOpen(true)} className="w-80 h-20 flex flex-row items-center justify-center mb-5 p-p-md border border-border-1 text-sm font-mono tracking-widest uppercase text-text-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
+                        Add track
                     </button>
                     
-                    <span className="mb-5 text-text-1 text-xl font-mono tracking-widest uppercase">Saved tracks</span>
+                    <span className="mb-5 text-text-1 text-xl font-mono tracking-widest uppercase">
+                        Saved tracks
+                    </span>
                     
+                    {/* Saved tracks */}
                     <div className="w-full min-h-0 overflow-y-auto flex flex-col flex-1 items-center justify-start no-scrollbar">
                         {savedTracks?.map((track) => (
                             <TrackButton key={track.id} trackName={track.name} onClick={() => onSelectSavedTrack(track)}/>
@@ -79,12 +89,15 @@ export default function TrackSelectionPage({onCloseTrackSelection, onClickTrackT
                 </div>
             )}
             
-            {/* Track Type Selection */}
+            {/* TRACK TYPE SELECTION MENU */}
             {isTrackTypeMenuOpen && (
                 <div id="track-type-menu" className='min-h-0 flex flex-col flex-1 items-center justify-start gap-gap-md bg-bg-1'>
                     <span className="mb-10 text-text-1 text-3xl font-mono tracking-widest uppercase">Track Type</span>
                     
+                    {/* Sprint type track button */}
                     <TrackTypeButton onClick={() => onClickTrackType("Sprint")} label={"Sprint"} children={<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-timer-icon lucide-timer m-5 text-icon-1 active:text-icon-active-1"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg>}/>
+                    
+                    {/* Circuit type track button */}
                     <TrackTypeButton onClick={() => onClickTrackType("Circuit")} label={"Circuit"} children={<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-flag-icon lucide-flag m-5 text-icon-1 active:text-icon-active-1"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/></svg>}/>
                 </div>
             )}

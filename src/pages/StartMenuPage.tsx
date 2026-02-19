@@ -31,8 +31,12 @@ export default function StartMenuPage({ onOpenSettings, onOpenSession }: StartMe
                 </HeaderButton>
             </div>
             <div className='flex flex-col flex-1 items-center justify-center gap-gap-md bg-bg-1'>
-                <span className='text-text-1 text-5xl font-bold font-mono tracking-widest uppercase'>TELEMETRA</span>
-                <span className='mb-20 text-sm font-mono tracking-widest uppercase text-text-2'>Telemetry for racing enthusiasts</span>
+                <span className='text-text-1 text-5xl font-bold font-mono tracking-widest uppercase'>
+                    TELEMETRA
+                </span>
+                <span className='mb-20 text-sm font-mono tracking-widest uppercase text-text-2'>
+                    Telemetry for racing enthusiasts
+                </span>
                 
                 <MenuButton label="Start session" onClick={onOpenSession}/>
                 <MenuButton label="View sessions data"/>

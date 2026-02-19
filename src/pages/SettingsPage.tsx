@@ -17,14 +17,20 @@ function SettingsButton({type, label, value, onClick}: SettingsButtonProps) {
         <>
             {type == 'action' && (
                 <div onClick={onClick} className="w-80 h-20 flex flex-row items-center justify-center p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
-                    <span className="text-sm font-mono tracking-widest uppercase text-text-1">{label}</span>
+                    <span className="text-sm font-mono tracking-widest uppercase text-text-1">
+                        {label}
+                    </span>
                 </div>
             )}
 
             {type == 'toggle' && (
                 <div onClick={onClick} className="w-80 h-20 flex flex-row items-center place-content-between p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-active-1 active:bg-bg-active-1">
-                    <span className="text-sm font-mono tracking-widest uppercase text-text-1">{label}</span>
-                    <span className="text-sm font-mono tracking-widest uppercase text-text-1">{value || 'OFF'}</span>
+                    <span className="text-sm font-mono tracking-widest uppercase text-text-1">
+                        {label}
+                    </span>
+                    <span className="text-sm font-mono tracking-widest uppercase text-text-1">
+                        {value || 'OFF'}
+                    </span>
                 </div>
             )}
         </>
@@ -32,6 +38,7 @@ function SettingsButton({type, label, value, onClick}: SettingsButtonProps) {
 }
 
 export default function SettingsPage({onCloseSettings}: SettingsPageProps) {
+    // Theme hook
     const { theme, toggleTheme } = useTheme();
 
     // Delete all data and update
@@ -79,11 +86,26 @@ export default function SettingsPage({onCloseSettings}: SettingsPageProps) {
             </div>
     
             <div className='flex flex-col flex-1 items-center justify-start p-p-md gap-gap-md bg-bg-1'>
-                <span className="mb-10 text-text-1 text-4xl font-mono tracking-widest uppercase">Settings</span>
+                <span className="mb-10 text-text-1 text-4xl font-mono tracking-widest uppercase">
+                    Settings
+                </span>
 
-                <SettingsButton type="toggle" label={"Dark mode"} value={theme === 'dark' ? 'ON' : 'OFF'} onClick={toggleTheme}/>
-                <SettingsButton type="action" label={"Update Telemetra"} onClick={() => window.location.reload()}/>
-                <SettingsButton type="action" label={"Clear all data and update"} onClick={handleHardReset}/>
+                <SettingsButton 
+                    type="toggle" 
+                    label={"Dark mode"} 
+                    value={theme === 'dark' ? 'ON' : 'OFF'} 
+                    onClick={toggleTheme}
+                />
+                <SettingsButton 
+                    type="action" 
+                    label={"Update Telemetra"} 
+                    onClick={() => window.location.reload()}
+                />
+                <SettingsButton 
+                    type="action" 
+                    label={"Clear all data and update"} 
+                    onClick={handleHardReset}
+                />
             </div>
         </div>
     );

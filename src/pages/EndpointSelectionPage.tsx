@@ -11,7 +11,7 @@ const markerIcon = new Icon({
 });
 
 interface MapSelectionPageProps {
-    onClose: () => void;
+    onCloseEndpointPage: () => void;
     onConfirm: (p1: LatLng, p2: LatLng) => void;
     title: string;
 }
@@ -27,7 +27,7 @@ function MapInstanceSelector({ setMap }: { setMap: (map: LeafletMap) => void }) 
     return null;
 }
 
-export default function EndpointSelectionPage({ onClose, onConfirm, title }: MapSelectionPageProps) {
+export default function EndpointSelectionPage({ onCloseEndpointPage, onConfirm, title }: MapSelectionPageProps) {
     const [points, setPoints] = useState<LatLng[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     
@@ -75,7 +75,7 @@ export default function EndpointSelectionPage({ onClose, onConfirm, title }: Map
     return (
         <div className="w-screen h-screen absolute flex flex-col z-30 bg-bg-1 overflow-hidden">
             <div className="h-header-h flex flex-row items-center justify-end bg-bg-1">
-                <HeaderButton onClick={onClose}>
+                <HeaderButton onClick={onCloseEndpointPage}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-icon-lg h-icon-lg text-icon-1 active:text-icon-active-1">
                         <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
                     </svg>
@@ -83,13 +83,15 @@ export default function EndpointSelectionPage({ onClose, onConfirm, title }: Map
             </div>
 
             <div className="flex flex-col flex-1 items-center justify-start p-p-md gap-gap-md relative bg-bg-1">
-                <span className="text-text-1 text-3xl font-mono tracking-widest uppercase text-center">{title}</span>
+                <span className="text-text-1 text-3xl font-mono tracking-widest uppercase text-center">
+                    {title}
+                </span>
                 
                 {/* Search Bar */}
                 <form onSubmit={handleSearch} className="w-full max-w-md flex gap-gap-md">
                     <input type="text" placeholder="CITY, TRACK OR COUNTRY" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value.toUpperCase())} className="flex-1 bg-transparent border-b border-border-1 py-2 text-text-1 font-mono outline-none placeholder:opacity-30"/>
                     <button type="submit" className="px-4 border border-border-1 text-text-1 font-mono text-xs uppercase hover:bg-bg-hover-1 active:bg-bg-active-1">
-                        GO
+                        Go
                     </button>
                 </form>
                 
