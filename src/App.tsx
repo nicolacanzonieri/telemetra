@@ -140,7 +140,7 @@ export default function App() {
       { isEndpointPageOpen && (
         <EndpointSelectionPage 
           title={gateStep === 'start' ? "Set Start Line" : "Set Finish Line"}
-          onClose={handleCloseEndpointPage}
+          onCloseEndpointPage={handleCloseEndpointPage}
           onConfirm={handleConfirmGate} 
         />
       )}
