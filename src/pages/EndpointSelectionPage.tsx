@@ -89,8 +89,16 @@ export default function EndpointSelectionPage({ onCloseEndpointPage, onConfirm, 
                 
                 {/* Search Bar */}
                 <form onSubmit={handleSearch} className="w-full max-w-md flex gap-gap-md">
-                    <input type="text" placeholder="CITY, TRACK OR COUNTRY" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value.toUpperCase())} className="flex-1 bg-transparent border-b border-border-1 py-2 text-text-1 font-mono outline-none placeholder:opacity-30"/>
-                    <button type="submit" className="px-4 border border-border-1 text-text-1 font-mono text-xs uppercase hover:bg-bg-hover-1 active:bg-bg-active-1">
+                    <input 
+                        type="text" 
+                        placeholder="CITY, TRACK OR COUNTRY" 
+                        value={searchQuery} 
+                        onChange={(e) => setSearchQuery(e.target.value.toUpperCase())} 
+                        className="flex-1 bg-transparent border-b border-border-1 py-2 text-text-1 font-mono outline-none placeholder:opacity-30"
+                    />
+                    <button 
+                        type="submit" 
+                        className="px-4 border border-border-1 text-text-1 font-mono text-xs uppercase hover:bg-bg-hover-1 active:bg-bg-active-1">
                         Go
                     </button>
                 </form>
