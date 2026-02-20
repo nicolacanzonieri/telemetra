@@ -39,7 +39,7 @@ function Timer({value}: TimerProps) {
 
 // @ts-ignore
 export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage }: OnBoardPageProps) {
-    const [showDebug, _setShowDebug] = useState(false);
+    const [showDebug, _setShowDebug] = useState(true);
     const [needsPermission, setNeedsPermission] = useState(false);
     const [calibrateState, setCalibrateState] = useState(false);
     const isCalibratedRef = useRef(false);
@@ -52,6 +52,9 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
     const sessionId = Date.now().toString();
     const [lastLapTime, setLastLapTime] = useState(0);
 
+    const [posLan, setPosLan] = useState<number>();
+    const [posLng, setPosLng] = useState<number>();
+    
     const handleStartPress = () => {
         setIsPressing(true);
         timerRef.current = window.setTimeout(() => {
@@ -158,7 +161,30 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
             window.addEventListener('devicemotion', handleMotion);
         }
 
+        const watchId = navigator.geolocation.watchPosition(
+            (position) => {
+                setPosLan(position.coords.latitude);
+                setPosLng(position.coords.longitude);
+                worker.postMessage({
+                    type: 'GPS_DATA',
+                    payload: {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        speed: position.coords.speed || 0,
+                        timestamp: position.timestamp
+                    }
+                });
+            },
+            (error) => console.error("Errore GPS:", error),
+            {
+                enableHighAccuracy: true,
+                maximumAge: 0,
+                timeout: 5000
+            }
+        );
+
         return () => {
+            navigator.geolocation.clearWatch(watchId);
             window.removeEventListener('devicemotion', handleMotion);
             worker.terminate();
             handleEndPress();
@@ -177,9 +203,11 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
         >
             {/* DEBUG MODAL */}
             { showDebug && (
-                <div className="w-full h-full flex flex-col items-center justify-center z-20 bg-bg-1">
+                <div className="w-full h-full flex flex-col items-center justify-center z-20 bg-bg-1/70">
                     <span className="text-text-1">{gForce.x}</span>
                     <span className="text-text-1">{gForce.y}</span>
+                    <span className="text-text-1">{posLan}</span>
+                    <span className="text-text-1">{posLng}</span>
                 </div>
             )}
 
