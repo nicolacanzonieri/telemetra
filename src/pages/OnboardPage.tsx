@@ -39,13 +39,15 @@ function Timer({value}: TimerProps) {
 
 // @ts-ignore
 export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage }: OnBoardPageProps) {
+    const [showDebug, _setShowDebug] = useState(false);
+    const [needsPermission, setNeedsPermission] = useState(false);
+    const [calibrateState, setCalibrateState] = useState(false);
+    const isCalibratedRef = useRef(false);
+    const calibratedRef = useRef({x: 0, y: 0});
+    const [isPressing, setIsPressing] = useState(false);
     const workerRef = useRef<Worker | null>(null);
     const [gForce, setGForce] = useState({ x: 0, y: 0 });
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const [isPressing, setIsPressing] = useState(false);
-    const [needsPermission, setNeedsPermission] = useState(false);
-    const isCalibratedRef = useRef(false);
-    const calibratedRef = useRef({x: 0, y: 0});
 
     const handleStartPress = () => {
         setIsPressing(true);
@@ -118,7 +120,6 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
                 const { currentG } = message.payload;
                 calibratedRef.current.x = currentG.x;
                 calibratedRef.current.y = currentG.y;
-                isCalibratedRef.current = true;
             }
         };
 
@@ -135,28 +136,49 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
             handleEndPress();
         };
     }, [handleMotion]);
-    
+
     return (
-        <div className='w-screen h-screen absolute flex flex-col z-40 bg-bg-1 cursor-pointer select-none transition-opacity duration-3000 ease-linear'
-            style={{
-                opacity: isPressing ? 0 : 1
-            }}
+        <div 
+            className='w-screen h-screen absolute bg-bg-1 z-40 cursor-pointer select-none transition-opacity duration-3000 ease-linear' 
+            style={{opacity: isPressing ? 0 : 1}}
             onMouseDown={handleStartPress}
             onMouseUp={handleEndPress}
             onMouseLeave={handleEndPress}
             onTouchStart={handleStartPress}
             onTouchEnd={handleEndPress}
         >
-            {needsPermission && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center bg-bg-1/90 backdrop-blur-sm">
-                    <button 
+            {/* DEBUG MODAL */}
+            { showDebug && (
+                <div className="w-full h-full flex flex-col items-center justify-center z-20 bg-bg-1">
+                    <span className="text-text-1">{gForce.x}</span>
+                    <span className="text-text-1">{gForce.y}</span>
+                </div>
+            )}
+
+            {/* PERMISSION MODAL */}
+            { needsPermission && (
+                <div className="w-full h-full flex items-center justify-center z-10 bg-bg-1">
+                    <button className="px-8 py-4 border border-text-1 text-text-1 font-mono font-bold uppercase tracking-widest hover:bg-bg-hover-1 active:bg-bg-active-1"
                         onClick={(e) => {
                             e.stopPropagation();
                             requestPermission();
                         }}
-                        className="px-8 py-4 border border-text-1 text-text-1 font-mono font-bold uppercase tracking-widest hover:bg-bg-hover-1 active:bg-bg-active-1"
                     >
                         Enable Sensors
+                    </button>
+                </div>
+            )}
+
+            {/* CALIBRATE SENSORS MODAL */}
+            { !calibrateState && (
+                <div className="w-full h-full relative flex items-center justify-center bg-bg-1">
+                    <button className="px-8 py-4 border border-text-1 text-text-1 font-mono font-bold uppercase tracking-widest hover:bg-bg-hover-1 active:bg-bg-active-1"
+                        onClick={() => {
+                            setCalibrateState(true);
+                            isCalibratedRef.current = false;
+                        }}
+                    >
+                        Calibrate sensors
                     </button>
                 </div>
             )}
