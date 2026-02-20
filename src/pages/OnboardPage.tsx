@@ -199,7 +199,7 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
                     <Timer value={"1:27:38"}/>
                 </div>
 
-                <div className="w-full h-[50%] flex items-center justify-center">
+                <div className="w-full h-[30%] flex items-center justify-center">
                     <div className="relative w-64 h-64 flex items-center justify-center pointer-events-none">
                         <div className="absolute w-full h border border-neutral-700"></div>
                         <div className="absolute h-full w border border-neutral-700"></div>
