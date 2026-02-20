@@ -175,7 +175,7 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
                     <button className="px-8 py-4 border border-text-1 text-text-1 font-mono font-bold uppercase tracking-widest hover:bg-bg-hover-1 active:bg-bg-active-1"
                         onClick={() => {
                             setCalibrateState(true);
-                            isCalibratedRef.current = false;
+                            isCalibratedRef.current = true;
                         }}
                     >
                         Calibrate sensors
