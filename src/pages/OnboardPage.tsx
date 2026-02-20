@@ -175,7 +175,7 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
                     }
                 });
             },
-            (error) => console.error("Errore GPS:", error),
+            (error) => console.error("Error GPS:", error),
             {
                 enableHighAccuracy: true,
                 maximumAge: 0,
