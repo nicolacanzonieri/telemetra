@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import TelemetryWorker from '../workers/telemetryWorker?worker';
 import type { WorkerResponse } from '../workers/telemetryWorker';
-import { type Gate } from "../db/database.ts";
+import { db, type Gate } from "../db/database.ts";
 
 interface OnBoardPageProps {
     startGate: Gate | null;
@@ -10,7 +10,7 @@ interface OnBoardPageProps {
 }
 
 interface TimerProps {
-    value: string;
+    value: number;
 }
 
 interface TimerLabelProps {
@@ -48,6 +48,9 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
     const workerRef = useRef<Worker | null>(null);
     const [gForce, setGForce] = useState({ x: 0, y: 0 });
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const sessionId = Date.now().toString();
+    const [lastLapTime, setLastLapTime] = useState(0);
 
     const handleStartPress = () => {
         setIsPressing(true);
@@ -127,6 +130,27 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
             }
         };
 
+        worker.onmessage = async (e: MessageEvent<WorkerResponse | {type: 'SAVE_BATCH', payload: any[]}>) => {
+            const data = e.data;
+
+            if (data.type === 'SAVE_BATCH') {
+                try {
+                    await db.samples.bulkAdd(data.payload);
+                } catch (err) {
+                    console.error("Errore nel salvataggio batch:", err);
+                }
+            }
+            
+            if (data.type === 'LAP_COMPLETED') {
+                setLastLapTime(data.payload.lapTime);
+                
+                const session = await db.sessions.get(sessionId);
+                if (!session?.bestLapTime || data.payload.lapTime < session.bestLapTime) {
+                    await db.sessions.update(sessionId, { bestLapTime: data.payload.lapTime });
+                }
+            }
+        };
+
         const explicitEvent = DeviceMotionEvent as unknown as DeviceMotionEventiOS;
         if (typeof explicitEvent.requestPermission === 'function') {
             setNeedsPermission(true);
@@ -196,11 +220,11 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
             <div className="w-full flex-1">
                 <div className="w-full h-[50%] flex flex-col items-start justify-start p-p-s">
                     <TimerLabel label={"LIVE"}/>
-                    <Timer value={"1:27:38"}/>
+                    <Timer value={0}/>
                     <TimerLabel label={"LAST LAP"}/>
-                    <Timer value={"1:27:38"}/>
+                    <Timer value={lastLapTime}/>
                     <TimerLabel label={"BEST LAP"}/>
-                    <Timer value={"1:27:38"}/>
+                    <Timer value={0}/>
                 </div>
 
                 <div className="w-full h-[30%] flex items-center justify-center">

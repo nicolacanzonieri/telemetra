@@ -1,14 +1,21 @@
 import type { Gate } from "../db/database";
 
 let isRunning = false;
+
+// Session related 
 let startGate: { p1: [number, number], p2: [number, number] } | null = null;
 let finishGate: { p1: [number, number], p2: [number, number] } | null = null;
 let lastPosition: [number, number] | null = null;
 let lastTimestamp: number | null = null;
 let sessionStartTime: number | null = null;
 
+// Database related
+let sampleBuffer: any[] = [];
+const BATCH_SIZE = 50; // Invia dati ogni 50 campioni o ogni X secondi
+let currentSessionId: number | null = null;
+
 export type WorkerMessage =
-  | { type: 'START_SESSION'; payload: { trackType: 'Circuit' | 'Sprint'; startGate: Gate | null; finishGate: Gate | null } }
+  | { type: 'START_SESSION'; payload: { sessionId: number; trackType: 'Circuit' | 'Sprint'; startGate: Gate | null; finishGate: Gate | null } }
   | { type: 'STOP_SESSION' }
   | { type: 'SENSOR_DATA'; payload: { accel: DeviceMotionEventAcceleration; timestamp: number } }
   | { type: 'GPS_DATA'; payload: { lat: number; lng: number; speed: number; timestamp: number } };
@@ -40,12 +47,39 @@ function getIntersection(
   return null;
 }
 
+function addToBuffer(sample: any) {
+  if (!currentSessionId) return;
+
+  sampleBuffer.push({
+    ...sample,
+    sessionId: currentSessionId
+  });
+
+  if (sampleBuffer.length >= BATCH_SIZE) {
+    flushBuffer();
+  }
+}
+
+function flushBuffer() {
+  if (sampleBuffer.length === 0) return;
+  
+  self.postMessage({
+    type: 'SAVE_BATCH',
+    payload: [...sampleBuffer]
+  });
+  
+  sampleBuffer = [];
+}
+
 self.onmessage = (e: MessageEvent<WorkerMessage>) => {
   const message = e.data;
 
   switch (message.type) {
     case 'START_SESSION':
       const { payload } = message;
+
+      currentSessionId = message.payload.sessionId;
+      sampleBuffer = [];
       isRunning = true;
       
       if (payload.startGate) {
@@ -119,6 +153,13 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
           }
         }
       }
+
+      addToBuffer({
+        timestamp: message.payload.timestamp,
+        lat: message.payload.lat,
+        lng: message.payload.lng,
+        speed: message.payload.speed,
+      });
 
       lastPosition = currentPos;
       lastTimestamp = currentTimestamp;
