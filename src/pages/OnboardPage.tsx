@@ -39,7 +39,7 @@ function Timer({value}: TimerProps) {
 
 // @ts-ignore
 export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage }: OnBoardPageProps) {
-    const [showDebug, _setShowDebug] = useState(true);
+    const [showDebug, _setShowDebug] = useState(false);
     const [needsPermission, setNeedsPermission] = useState(false);
     const [calibrateState, setCalibrateState] = useState(false);
     const isCalibratedRef = useRef(false);
@@ -204,8 +204,11 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
             {/* DEBUG MODAL */}
             { showDebug && (
                 <div className="w-full h-full flex flex-col items-center justify-center z-20 bg-bg-1/70">
+                    <span className="text-text-1">G-Force:</span>
                     <span className="text-text-1">{gForce.x}</span>
                     <span className="text-text-1">{gForce.y}</span>
+                    <br></br>
+                    <span className="text-text-1">Position:</span>
                     <span className="text-text-1">{posLan}</span>
                     <span className="text-text-1">{posLng}</span>
                 </div>
