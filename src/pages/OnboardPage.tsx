@@ -105,7 +105,11 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
 
         worker.postMessage({ 
             type: 'START_SESSION', 
-            payload: { trackType: 'Circuit' } 
+            payload: { 
+                trackType: 'Circuit', 
+                startGate: startGate,
+                finishGate: finishGate
+            } 
         });
 
         worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
