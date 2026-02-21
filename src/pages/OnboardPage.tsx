@@ -120,39 +120,44 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
             } 
         });
 
-        worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
-            const message = e.data;
-            if (message.type === 'UPDATE_STATS' && isCalibratedRef.current) {
-                const { currentG } = message.payload;
-                setGForce({
-                    x: (currentG.x - calibratedRef.current.x) * 20,
-                    y: (currentG.y - calibratedRef.current.y) * -20
-                });
-            } else if (message.type === 'UPDATE_STATS' && !isCalibratedRef.current) {
-                const { currentG } = message.payload;
-                calibratedRef.current.x = currentG.x;
-                calibratedRef.current.y = currentG.y;
-            }
-        };
-
         worker.onmessage = async (e: MessageEvent<WorkerResponse | {type: 'SAVE_BATCH', payload: any[]}>) => {
             const data = e.data;
 
-            if (data.type === 'SAVE_BATCH') {
-                try {
-                    await db.samples.bulkAdd(data.payload);
-                } catch (err) {
-                    console.error("Errore nel salvataggio batch:", err);
-                }
-            }
-            
-            if (data.type === 'LAP_COMPLETED') {
-                setLastLapTime(data.payload.lapTime);
-                
-                const session = await db.sessions.get(sessionId);
-                if (!session?.bestLapTime || data.payload.lapTime < session.bestLapTime) {
-                    await db.sessions.update(sessionId, { bestLapTime: data.payload.lapTime });
-                }
+            switch (data.type) {
+                case 'UPDATE_STATS':
+                    if (isCalibratedRef.current) {
+                        const { currentG } = data.payload;
+                        setGForce({
+                            x: (currentG.x - calibratedRef.current.x) * 20,
+                            y: (currentG.y - calibratedRef.current.y) * -20
+                        });
+                    } else {
+                        const { currentG } = data.payload;
+                        calibratedRef.current.x = currentG.x;
+                        calibratedRef.current.y = currentG.y;
+                    }
+                    break;
+
+                case 'SAVE_BATCH':
+                    try {
+                        await db.samples.bulkAdd(data.payload);
+                    } catch (err) {
+                        console.error("Errore nel salvataggio batch:", err);
+                    }
+                    break;
+
+                case 'LAP_COMPLETED':
+                    setLastLapTime(data.payload.lapTime);
+                    
+                    const session = await db.sessions.get(sessionId);
+                    if (!session?.bestLapTime || data.payload.lapTime < session.bestLapTime) {
+                        await db.sessions.update(sessionId, { bestLapTime: data.payload.lapTime });
+                    }
+                    break;
+
+                default:
+                    console.warn("Messaggio del worker non riconosciuto:", data);
+                    break;
             }
         };
 
