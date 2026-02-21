@@ -142,7 +142,7 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
                     try {
                         await db.samples.bulkAdd(data.payload);
                     } catch (err) {
-                        console.error("Errore nel salvataggio batch:", err);
+                        console.error("Error while saving the batch:", err);
                     }
                     break;
 
@@ -156,7 +156,7 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
                     break;
 
                 default:
-                    console.warn("Messaggio del worker non riconosciuto:", data);
+                    console.warn("Worker message not recognized:", data);
                     break;
             }
         };
