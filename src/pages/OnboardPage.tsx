@@ -55,6 +55,7 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
     const [showDebug, _setShowDebug] = useState(true);
     const [posLan, setPosLan] = useState<number>();
     const [posLng, setPosLng] = useState<number>();
+    const [accuracy, setAccuracy] = useState<number>();
     
     const handleStartPress = () => {
         setIsPressing(true);
@@ -166,6 +167,7 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
             (position) => {
                 setPosLan(position.coords.latitude);
                 setPosLng(position.coords.longitude);
+                setAccuracy(position.coords.accuracy);
                 worker.postMessage({
                     type: 'GPS_DATA',
                     payload: {
@@ -241,6 +243,7 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
                     <span className="text-text-1">Position:</span>
                     <span className="text-text-1">{posLan}</span>
                     <span className="text-text-1">{posLng}</span>
+                    <span className="text-text-1">{accuracy}</span>
                 </div>
             )}
 
