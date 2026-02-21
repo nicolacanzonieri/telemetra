@@ -14,6 +14,17 @@ let sampleBuffer: any[] = [];
 const BATCH_SIZE = 50; // Send data every 50 samples or every X seconds
 let currentSessionId: number | null = null;
 
+// Kalman and low pass filter
+const ACCEL_SMOOTHING = 0.15; // Lower = smoother, but with more lag (0.1 - 0.2 is ideal)
+const GPS_TRUST_FACTOR = 0.2; // How much to trust GPS relative to inertial integration
+
+// Filtered values for the G-Ball
+let filteredGx = 0;
+let filteredGy = 0;
+
+// State for integration (for future velocity and position)
+let lastAccelTimestamp: number | null = null;
+
 export type WorkerMessage =
   | { type: 'START_SESSION'; payload: { sessionId: number; trackType: 'Circuit' | 'Sprint'; startGate: Gate | null; finishGate: Gate | null } }
   | { type: 'STOP_SESSION' }
@@ -112,13 +123,24 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
 
     case 'SENSOR_DATA':
       if (!isRunning) return;
-      // TODO: Kalman filter
+
+      const { accel, timestamp } = message.payload;
+
+      // Apply low-pass-filter (EMA) for the G-Meter
+      filteredGx = (accel.x || 0) * ACCEL_SMOOTHING + filteredGx * (1 - ACCEL_SMOOTHING);
+      filteredGy = (accel.y || 0) * ACCEL_SMOOTHING + filteredGy * (1 - ACCEL_SMOOTHING);
+
+      const dt = lastAccelTimestamp ? (timestamp - lastAccelTimestamp) / 1000 : 0;
+      lastAccelTimestamp = timestamp;
+
+      // TODO: Integrazione inerziale della velocità (Phase B del Kalman)
+
       self.postMessage({
         type: 'UPDATE_STATS',
         payload: {
           currentG: {
-            x: message.payload.accel.x || 0,
-            y: message.payload.accel.y || 0
+            x: filteredGx,
+            y: filteredGy
           }
         }
       });
