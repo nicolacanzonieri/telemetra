@@ -39,7 +39,6 @@ function Timer({value}: TimerProps) {
 
 // @ts-ignore
 export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage }: OnBoardPageProps) {
-    const [showDebug, _setShowDebug] = useState(false);
     const [needsPermission, setNeedsPermission] = useState(false);
     const [calibrateState, setCalibrateState] = useState(false);
     const isCalibratedRef = useRef(false);
@@ -48,10 +47,12 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
     const workerRef = useRef<Worker | null>(null);
     const [gForce, setGForce] = useState({ x: 0, y: 0 });
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+    
     const sessionId = Date.now().toString();
     const [lastLapTime, setLastLapTime] = useState(0);
-
+    
+    // DEBUG PURPOSE ONLY
+    const [showDebug, _setShowDebug] = useState(false);
     const [posLan, setPosLan] = useState<number>();
     const [posLng, setPosLng] = useState<number>();
     
@@ -201,22 +202,10 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
             onTouchStart={handleStartPress}
             onTouchEnd={handleEndPress}
         >
-            {/* DEBUG MODAL */}
-            { showDebug && (
-                <div className="w-full h-full flex flex-col items-center justify-center z-20 bg-bg-1/70">
-                    <span className="text-text-1">G-Force:</span>
-                    <span className="text-text-1">{gForce.x}</span>
-                    <span className="text-text-1">{gForce.y}</span>
-                    <br></br>
-                    <span className="text-text-1">Position:</span>
-                    <span className="text-text-1">{posLan}</span>
-                    <span className="text-text-1">{posLng}</span>
-                </div>
-            )}
 
             {/* PERMISSION MODAL */}
             { needsPermission && (
-                <div className="w-full h-full flex items-center justify-center z-10 bg-bg-1">
+                <div className="w-full h-full fixed flex items-center justify-center z-30 bg-bg-1">
                     <button className="px-8 py-4 border border-text-1 text-text-1 font-mono font-bold uppercase tracking-widest hover:bg-bg-hover-1 active:bg-bg-active-1"
                         onClick={(e) => {
                             e.stopPropagation();
@@ -230,7 +219,7 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
 
             {/* CALIBRATE SENSORS MODAL */}
             { !calibrateState && (
-                <div className="w-full h-full relative flex items-center justify-center bg-bg-1">
+                <div className="w-full h-full fixed flex items-center justify-center z-20 bg-bg-1">
                     <button className="px-8 py-4 border border-text-1 text-text-1 font-mono font-bold uppercase tracking-widest hover:bg-bg-hover-1 active:bg-bg-active-1"
                         onClick={() => {
                             setCalibrateState(true);
@@ -239,6 +228,19 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
                     >
                         Calibrate sensors
                     </button>
+                </div>
+            )}
+
+            {/* DEBUG MODAL */}
+            { showDebug && (
+                <div className="w-full h-full fixed flex flex-col items-center justify-center z-10 bg-bg-1/70" onClick={() => _setShowDebug(false)}>
+                    <span className="text-text-1">G-Force:</span>
+                    <span className="text-text-1">{gForce.x}</span>
+                    <span className="text-text-1">{gForce.y}</span>
+                    <br></br>
+                    <span className="text-text-1">Position:</span>
+                    <span className="text-text-1">{posLan}</span>
+                    <span className="text-text-1">{posLng}</span>
                 </div>
             )}
 
