@@ -52,7 +52,7 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
     const [lastLapTime, setLastLapTime] = useState(0);
     
     // DEBUG PURPOSE ONLY
-    const [showDebug, _setShowDebug] = useState(true);
+    const [showDebug, _setShowDebug] = useState(false);
     const [posLan, setPosLan] = useState<number>();
     const [posLng, setPosLng] = useState<number>();
     const [accuracy, setAccuracy] = useState<number>();
