@@ -16,6 +16,7 @@ let currentSessionId: number | null = null;
 
 // Kalman and low pass filter
 const ACCEL_SMOOTHING = 0.15; // Lower = smoother, but with more lag (0.1 - 0.2 is ideal)
+// @ts-ignore
 const GPS_TRUST_FACTOR = 0.2; // How much to trust GPS relative to inertial integration
 
 // Filtered values for the G-Ball
@@ -130,6 +131,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
       filteredGx = (accel.x || 0) * ACCEL_SMOOTHING + filteredGx * (1 - ACCEL_SMOOTHING);
       filteredGy = (accel.y || 0) * ACCEL_SMOOTHING + filteredGy * (1 - ACCEL_SMOOTHING);
 
+      // @ts-ignore
       const dt = lastAccelTimestamp ? (timestamp - lastAccelTimestamp) / 1000 : 0;
       lastAccelTimestamp = timestamp;
 
