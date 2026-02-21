@@ -63,13 +63,24 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     
     const sessionId = Date.now().toString();
-    const [lastLapTime, setLastLapTime] = useState("00:00:000");
+    const [liveLapMs, setLiveLapMs] = useState<number>(0);
+    const [lastLapTime, setLastLapTime] = useState<number>(0);
+    const lapStartTimeRef = useRef<number | null>(null);
+    const requestRef = useRef<number>(null);
     
     // DEBUG PURPOSE ONLY
     const [showDebug, _setShowDebug] = useState(false);
     const [posLan, setPosLan] = useState<number>();
     const [posLng, setPosLng] = useState<number>();
     const [accuracy, setAccuracy] = useState<number>();
+
+    const animate = useCallback(() => {
+        if (lapStartTimeRef.current !== null) {
+            const now = Date.now();
+            setLiveLapMs(now - lapStartTimeRef.current);
+        }
+        requestRef.current = requestAnimationFrame(animate);
+    }, []);
     
     const handleStartPress = () => {
         setIsPressing(true);
@@ -122,6 +133,13 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
     };
 
     useEffect(() => {
+        requestRef.current = requestAnimationFrame(animate);
+        return () => {
+            if (requestRef.current) cancelAnimationFrame(requestRef.current);
+        };
+    }, [animate]);
+
+    useEffect(() => {
         const worker = new TelemetryWorker();
         workerRef.current = worker;
 
@@ -160,14 +178,18 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
                     }
                     break;
 
+                case 'STARTING_LAP':
+                    lapStartTimeRef.current = data.payload.startTime;
+                    break;
+
                 case 'LAP_COMPLETED':
                     const totalMs = data.payload.lapTime; 
-                    const formatted = formatMs(totalMs);
 
-                    setLastLapTime(formatted.total);
+                    setLastLapTime(totalMs);
+                    lapStartTimeRef.current = Date.now(); 
                     
-                    const session = await db.sessions.get(sessionId);
-                    if (!session?.bestLapTime || data.payload.lapTime < session.bestLapTime) {
+                    const sessionLapCompleted = await db.sessions.get(sessionId);
+                    if (!sessionLapCompleted?.bestLapTime || data.payload.lapTime < sessionLapCompleted.bestLapTime) {
                         await db.sessions.update(sessionId, { bestLapTime: data.payload.lapTime });
                     }
                     break;
@@ -278,9 +300,9 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
             <div className="w-full flex-1">
                 <div className="w-full h-[50%] flex flex-col items-start justify-start p-p-s">
                     <TimerLabel label={"LIVE"}/>
-                    <Timer value={"00:00:000"}/>
+                    <Timer value={formatMs(liveLapMs).total}/>
                     <TimerLabel label={"LAST LAP"}/>
-                    <Timer value={lastLapTime}/>
+                    <Timer value={formatMs(lastLapTime).total}/>
                     <TimerLabel label={"BEST LAP"}/>
                     <Timer value={"00:00:000"}/>
                 </div>

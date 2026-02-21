@@ -22,6 +22,7 @@ export type WorkerMessage =
 
 export type WorkerResponse =
   | { type: 'UPDATE_STATS'; payload: { currentG: { x: number, y: number }, lapTime?: string } }
+  | { type: 'STARTING_LAP'; payload: { startTime: number } }
   | { type: 'LAP_COMPLETED'; payload: { lapTime: number } };
 
 
@@ -141,6 +142,11 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
           if (sessionStartTime === null) {
             // First pass: start the timer
             sessionStartTime = exactTime;
+            
+            self.postMessage({
+              type: 'STARTING_LAP',
+              payload: { startTime: exactTime }
+            });
           } else {
             // Subsequent passes: calculate lap time
             const lapTimeMs = exactTime - sessionStartTime;
