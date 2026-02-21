@@ -23,6 +23,9 @@ const GPS_TRUST_FACTOR = 0.2; // How much to trust GPS relative to inertial inte
 let filteredGx = 0;
 let filteredGy = 0;
 
+// Fusioned speed between GPS and Accelerometer
+let filteredSpeed = 0;
+
 // State for integration (for future velocity and position)
 let lastAccelTimestamp: number | null = null;
 
@@ -135,7 +138,12 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
       const dt = lastAccelTimestamp ? (timestamp - lastAccelTimestamp) / 1000 : 0;
       lastAccelTimestamp = timestamp;
 
-      // TODO: Integrazione inerziale della velocità (Phase B del Kalman)
+      if (dt > 0 && dt < 0.2) {
+        // Integrate acceleration to estimate speed (v = v0 + a*dt)
+        filteredSpeed += (filteredGy * 9.81) * dt;
+        // Prevent negative speed due to sensor noise or calibration drift
+        if (filteredSpeed < 0) filteredSpeed = 0;
+      }
 
       self.postMessage({
         type: 'UPDATE_STATS',
