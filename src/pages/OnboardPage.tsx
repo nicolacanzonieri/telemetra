@@ -10,7 +10,7 @@ interface OnBoardPageProps {
 }
 
 interface TimerProps {
-    value: number;
+    value: string;
 }
 
 interface TimerLabelProps {
@@ -37,6 +37,20 @@ function Timer({value}: TimerProps) {
     );
 }
 
+function formatMs(ms: number) {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    const milli = Math.floor(ms % 1000);
+
+    return {
+        // padStart aggiunge lo zero iniziale se la cifra è singola
+        minStr: minutes.toString().padStart(2, '0'),
+        secStr: seconds.toString().padStart(2, '0'),
+        milliStr: milli.toString().padStart(3, '0'),
+        total: `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${milli.toString().padStart(3, '0')}`
+    };
+}
+
 // @ts-ignore
 export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage }: OnBoardPageProps) {
     const [needsPermission, setNeedsPermission] = useState(false);
@@ -49,7 +63,7 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     
     const sessionId = Date.now().toString();
-    const [lastLapTime, setLastLapTime] = useState(0);
+    const [lastLapTime, setLastLapTime] = useState("00:00:000");
     
     // DEBUG PURPOSE ONLY
     const [showDebug, _setShowDebug] = useState(false);
@@ -147,7 +161,10 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
                     break;
 
                 case 'LAP_COMPLETED':
-                    setLastLapTime(data.payload.lapTime);
+                    const totalMs = data.payload.lapTime; 
+                    const formatted = formatMs(totalMs);
+
+                    setLastLapTime(formatted.total);
                     
                     const session = await db.sessions.get(sessionId);
                     if (!session?.bestLapTime || data.payload.lapTime < session.bestLapTime) {
@@ -261,11 +278,11 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
             <div className="w-full flex-1">
                 <div className="w-full h-[50%] flex flex-col items-start justify-start p-p-s">
                     <TimerLabel label={"LIVE"}/>
-                    <Timer value={0}/>
+                    <Timer value={"00:00:000"}/>
                     <TimerLabel label={"LAST LAP"}/>
                     <Timer value={lastLapTime}/>
                     <TimerLabel label={"BEST LAP"}/>
-                    <Timer value={0}/>
+                    <Timer value={"00:00:000"}/>
                 </div>
 
                 <div className="w-full h-[30%] flex items-center justify-center">
