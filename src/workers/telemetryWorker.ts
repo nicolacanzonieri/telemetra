@@ -11,7 +11,7 @@ let sessionStartTime: number | null = null;
 
 // Database related
 let sampleBuffer: any[] = [];
-const BATCH_SIZE = 50; // Invia dati ogni 50 campioni o ogni X secondi
+const BATCH_SIZE = 50; // Send data every 50 samples or every X seconds
 let currentSessionId: number | null = null;
 
 export type WorkerMessage =
@@ -63,6 +63,9 @@ function addToBuffer(sample: any) {
 
 function flushBuffer() {
   if (sampleBuffer.length === 0) return;
+  
+  const count = sampleBuffer.length;
+  console.log(`WORKER: SENDING BATCH OF ${count} SAMPLES TO UI...`);
   
   self.postMessage({
     type: 'SAVE_BATCH',
@@ -136,6 +139,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
 
         // Driver crossed the line
         if (intersectT !== null) {
+          console.log("WORKER: FINISH LINE CROSSED");
           // Calculate the exact millisecond by interpolating between the two timestamps
           const exactTime = lastTimestamp! + (currentTimestamp - lastTimestamp!) * intersectT;
 

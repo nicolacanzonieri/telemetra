@@ -173,6 +173,9 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
                 case 'SAVE_BATCH':
                     try {
                         await db.samples.bulkAdd(data.payload);
+                        const startTime = performance.now();
+                        const duration = performance.now() - startTime;
+                        console.log(`💾 DB: Saved ${data.payload.length} samples in ${duration.toFixed(2)}ms`);
                     } catch (err) {
                         console.error("Error while saving the batch:", err);
                     }
@@ -184,6 +187,7 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
 
                 case 'LAP_COMPLETED':
                     const totalMs = data.payload.lapTime; 
+                    console.log(`SESSION: LAP COMPLETED WITH TIME: ${formatMs(data.payload.lapTime).total}`);
 
                     setLastLapTime(totalMs);
                     lapStartTimeRef.current = Date.now(); 

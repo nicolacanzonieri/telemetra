@@ -50,3 +50,8 @@ export class TelemetraDB extends Dexie {
 }
 
 export const db = new TelemetraDB();
+
+if (import.meta.env.DEV) {
+    (window as any).db = db;
+    console.log("TelemetraDB loaded. Write 'db' in the console to inspect it.");
+}

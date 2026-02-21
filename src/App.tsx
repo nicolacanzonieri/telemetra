@@ -64,7 +64,11 @@ export default function App() {
   };
 
   // When selecting a saved track...
-  const handleSelectSavedTrack = async (_track: Track) => {
+  const handleSelectSavedTrack = async (track: Track) => {
+    console.log("LOADED SAVED TRACK:", track);
+    setStartGate(track.startGate || null);
+    setFinishGate(track.finishGate);
+    setTrackType(track.type);
     setIsTrackSelectionPageOpen(false);
     setIsOnBoardPageOpen(true);
   };
@@ -106,6 +110,7 @@ export default function App() {
         newTrack.startGate.p2 = startGate.p2;
       }
 
+      console.log("NEW TRACK CREATED:", newTrack);
       await db.tracks.add(newTrack);
 
       setIsEndpointPageOpen(false);
