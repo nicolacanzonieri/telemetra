@@ -74,6 +74,7 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
     const [posLng, setPosLng] = useState<number>();
     const [accuracy, setAccuracy] = useState<number>();
     const [gpsError, setGpsError] = useState<string>();
+    const [sampleCount, setSampleCount] = useState<number>(0);
 
     const animate = useCallback(() => {
         if (lapStartTimeRef.current !== null) {
@@ -177,6 +178,8 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
                         const startTime = performance.now();
                         const duration = performance.now() - startTime;
                         console.log(`💾 DB: Saved ${data.payload.length} samples in ${duration.toFixed(2)}ms`);
+                        const count = await db.samples.count();
+                        setSampleCount(count);
                     } catch (err) {
                         console.error("Error while saving the batch:", err);
                     }
@@ -301,23 +304,6 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
                 </div>
             )}
 
-            {/* DEBUG MODAL */}
-            { showDebug && (
-                <div className="w-full h-full fixed flex flex-col items-center justify-center z-10 bg-bg-1/70" onClick={() => _setShowDebug(false)}>
-                    <span className="text-text-1">G-Force:</span>
-                    <span className="text-text-1">{gForce.x}</span>
-                    <span className="text-text-1">{gForce.y}</span>
-                    <br></br>
-                    <span className="text-text-1">Position:</span>
-                    <span className="text-text-1">{posLan}</span>
-                    <span className="text-text-1">{posLng}</span>
-                    <span className="text-text-1">{accuracy}</span>
-                    <br></br>
-                    <span className="text-text-1">Error:</span>
-                    <span className="text-text-1">{gpsError}</span>
-                </div>
-            )}
-
             <div className="w-full h-22 bg-red-500 flex flex-row items-center justify-center">
                 <span className="text-[50px] font-bold font-mono tracking-widest uppercase text-text-1">
                     +0.753
@@ -333,6 +319,26 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
                     <TimerLabel label={"BEST LAP"}/>
                     <Timer value={"00:00:000"}/>
                 </div>
+
+                { showDebug && (
+                    <div className="w-full h-full flex flex-col items-center justify-center z-10 bg-bg-1/70">
+                        <span className="text-text-1">G-Force:</span>
+                        <span className="text-text-1">{gForce.x}</span>
+                        <span className="text-text-1">{gForce.y}</span>
+                        <br></br>
+                        <span className="text-text-1">Position:</span>
+                        <span className="text-text-1">{posLan}</span>
+                        <span className="text-text-1">{posLng}</span>
+                        <span className="text-text-1">{accuracy}</span>
+                        <br></br>
+                        <span className="text-text-1">Error:</span>
+                        <span className="text-text-1">{gpsError}</span>
+                        <br></br>
+                        <span className="text-text-1">Samples:</span>
+                        <span className="text-text-1">{sampleCount}</span>
+                        <br></br>
+                    </div>
+                )}
 
                 <div className="w-full h-[30%] flex items-center justify-center">
                     <div className="relative w-64 h-64 flex items-center justify-center pointer-events-none">
