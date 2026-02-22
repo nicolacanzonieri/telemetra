@@ -69,10 +69,11 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
     const requestRef = useRef<number>(null);
     
     // DEBUG PURPOSE ONLY
-    const [showDebug, _setShowDebug] = useState(false);
+    const [showDebug, _setShowDebug] = useState(true);
     const [posLan, setPosLan] = useState<number>();
     const [posLng, setPosLng] = useState<number>();
     const [accuracy, setAccuracy] = useState<number>();
+    const [gpsError, setGpsError] = useState<string>();
 
     const animate = useCallback(() => {
         if (lapStartTimeRef.current !== null) {
@@ -231,12 +232,15 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
                     switch (error.code) {
                         case error.PERMISSION_DENIED:
                             console.error("Geolocation error: User denied the request for Geolocation.");
+                            setGpsError("Geolocation error: User denied the request for Geolocation.");
                             break;
                         case error.POSITION_UNAVAILABLE:
                             console.error("Geolocation error: Location information is unavailable.");
+                            setGpsError("Geolocation error: Location information is unavailable.");
                             break;
                         case error.TIMEOUT:
                             console.error("Geolocation error: The request to get user location timed out.");
+                            setGpsError("Geolocation error: The request to get user location timed out.");
                             break;
                     }
                     if (error.message) {
@@ -308,6 +312,9 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
                     <span className="text-text-1">{posLan}</span>
                     <span className="text-text-1">{posLng}</span>
                     <span className="text-text-1">{accuracy}</span>
+                    <br></br>
+                    <span className="text-text-1">Error:</span>
+                    <span className="text-text-1">{gpsError}</span>
                 </div>
             )}
 
