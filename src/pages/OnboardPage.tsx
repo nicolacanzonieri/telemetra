@@ -62,7 +62,7 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
     const [gForce, setGForce] = useState({ x: 0, y: 0 });
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     
-    const sessionId = Date.now().toString();
+    const sessionId = Date.now();
     const [liveLapMs, setLiveLapMs] = useState<number>(0);
     const [lastLapTime, setLastLapTime] = useState<number>(0);
     const lapStartTimeRef = useRef<number | null>(null);
@@ -148,6 +148,7 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
         worker.postMessage({ 
             type: 'START_SESSION', 
             payload: { 
+                sessionId: sessionId,
                 trackType: 'Circuit', 
                 startGate: startGate,
                 finishGate: finishGate

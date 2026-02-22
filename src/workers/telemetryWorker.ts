@@ -62,7 +62,7 @@ function getIntersection(
 function addToBuffer(sample: any) {
   if (!currentSessionId) return;
   
-  console.log("SAMPLE: " + sample);
+  console.log("SAMPLE: ", sample);
 
   sampleBuffer.push({
     ...sample,
