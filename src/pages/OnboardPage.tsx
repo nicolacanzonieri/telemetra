@@ -163,6 +163,7 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
             type: 'START_SESSION', 
             payload: { 
                 sessionId: sessionId,
+                trackName: trackName,
                 trackType: 'Circuit', 
                 startGate: startGate,
                 finishGate: finishGate

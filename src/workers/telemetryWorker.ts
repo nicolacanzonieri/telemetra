@@ -29,7 +29,7 @@ let lastAccelTimestamp: number | null = null;
 let isVelocityInitialized = false;
 
 export type WorkerMessage =
-  | { type: 'START_SESSION'; payload: { sessionId: number; trackType: 'Circuit' | 'Sprint'; startGate: Gate | null; finishGate: Gate | null } }
+  | { type: 'START_SESSION'; payload: { sessionId: number; trackName: string, trackType: 'Circuit' | 'Sprint'; startGate: Gate | null; finishGate: Gate | null } }
   | { type: 'STOP_SESSION' }
   | { type: 'SENSOR_DATA'; payload: { accel: DeviceMotionEventAcceleration; timestamp: number } }
   | { type: 'GPS_DATA'; payload: { lat: number; lng: number; speed: number; timestamp: number } };
