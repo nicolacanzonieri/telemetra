@@ -15,7 +15,7 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isTrackSelectionOpen, setIsTrackSelectionPageOpen] = useState(false);
   const [isEndpointPageOpen, setIsEndpointPageOpen] = useState(false);
-  const [isOnBoardPageOpen, setIsOnBoardPageOpen] = useState(true);
+  const [isOnBoardPageOpen, setIsOnBoardPageOpen] = useState(false);
 
   // TRACK LOGIC
   const [startGate, setStartGate] = useState<Gate | null>(null);
