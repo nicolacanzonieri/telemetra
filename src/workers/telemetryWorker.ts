@@ -212,7 +212,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
         lng: lng,
         speed: filteredSpeed,
       });
-      console.log("SAMPLE BUFFER:\n" + sampleBuffer);
+      console.log(`WORKER: BUFFER SIZE ${sampleBuffer.length}`);
 
       lastPosition = currentPos;
       lastTimestamp = gpsTimestamp;
