@@ -18,6 +18,7 @@ export default function App() {
   const [isOnBoardPageOpen, setIsOnBoardPageOpen] = useState(false);
 
   // TRACK LOGIC
+  const [currentTrackName, setCurrentTrackName] = useState("");
   const [startGate, setStartGate] = useState<Gate | null>(null);
   const [finishGate, setFinishGate] = useState<Gate | null>(null);
   const [trackType, setTrackType] = useState<'Circuit' | 'Sprint' | null>(null);
@@ -66,6 +67,7 @@ export default function App() {
   // When selecting a saved track...
   const handleSelectSavedTrack = async (track: Track) => {
     console.log("LOADED SAVED TRACK:", track);
+    setCurrentTrackName(track.name);
     setStartGate(track.startGate || null);
     setFinishGate(track.finishGate);
     setTrackType(track.type);
@@ -158,6 +160,7 @@ export default function App() {
       {/* ONBOARD PAGE */}
       { isOnBoardPageOpen && (
         <OnBoardPage 
+          trackName={currentTrackName}
           startGate={startGate}
           finishGate={finishGate}
           onCloseOnboardPage={handleCloseOnboardPage}

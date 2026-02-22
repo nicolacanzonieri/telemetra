@@ -4,6 +4,7 @@ import type { WorkerResponse } from '../workers/telemetryWorker';
 import { db, type Gate } from "../db/database.ts";
 
 interface OnBoardPageProps {
+    trackName: string;
     startGate: Gate | null;
     finishGate: Gate | null;
     onCloseOnboardPage: () => void;
@@ -52,7 +53,7 @@ function formatMs(ms: number) {
 }
 
 // @ts-ignore
-export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage }: OnBoardPageProps) {
+export default function OnBoardPage({ trackName, startGate, finishGate, onCloseOnboardPage }: OnBoardPageProps) {
     const [needsPermission, setNeedsPermission] = useState(false);
     const [calibrateState, setCalibrateState] = useState(false);
     const isCalibratedRef = useRef(false);
@@ -142,6 +143,19 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
     }, [animate]);
 
     useEffect(() => {
+        const initSession = async () => {
+            await db.sessions.add({
+                id: sessionId,
+                date: Date.now(),
+                trackName: trackName,
+                trackType: 'Circuit',
+                bestLapTime: null
+            });
+            console.log("DB: Session record created");
+        };
+
+        initSession();
+
         const worker = new TelemetryWorker();
         workerRef.current = worker;
 
