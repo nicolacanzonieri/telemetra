@@ -129,6 +129,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
 
       const { accel, timestamp } = message.payload;
 
+      // Prediction phase
       // Low-Pass Filter (EMA) for G-Force visualization
       filteredGx = (accel.x || 0) * ACCEL_SMOOTHING + filteredGx * (1 - ACCEL_SMOOTHING);
       filteredGy = (accel.y || 0) * ACCEL_SMOOTHING + filteredGy * (1 - ACCEL_SMOOTHING);
