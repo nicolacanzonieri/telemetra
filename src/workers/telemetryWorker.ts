@@ -12,7 +12,7 @@ let sessionStartTime: number | null = null;
 
 // Database related
 let sampleBuffer: any[] = [];
-const BATCH_SIZE = 50; 
+const BATCH_SIZE = 5; 
 let currentSessionId: number | null = null;
 
 // --- KALMAN & FILTER CONFIG ---
@@ -212,6 +212,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
         lng: lng,
         speed: filteredSpeed,
       });
+      console.log("SAMPLE BUFFER:\n" + sampleBuffer);
 
       lastPosition = currentPos;
       lastTimestamp = gpsTimestamp;
