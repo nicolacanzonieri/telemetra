@@ -225,9 +225,25 @@ export default function OnBoardPage({ startGate, finishGate, onCloseOnboardPage 
                         timestamp: position.timestamp
                     }
                 });
-            },
-            (error) => console.error("Error GPS:", error),
-            {
+            }, error => {
+                console.error("Error GPS:", error);
+                if (error && error.code) {
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            console.error("Geolocation error: User denied the request for Geolocation.");
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            console.error("Geolocation error: Location information is unavailable.");
+                            break;
+                        case error.TIMEOUT:
+                            console.error("Geolocation error: The request to get user location timed out.");
+                            break;
+                    }
+                    if (error.message) {
+                        console.error("Geolocation error message:", error.message);
+                    }
+                }
+            }, {
                 enableHighAccuracy: true,
                 maximumAge: 0,
                 timeout: 5000
