@@ -5,6 +5,7 @@ import { db, type Track, type Gate } from './db/database.ts'
 // PAGES
 import StartMenuPage from './pages/StartMenuPage.tsx'
 import SettingsPage from './pages/SettingsPage.tsx'
+import DataViewerPage from './pages/DataViewerPage.tsx'
 import TrackSelectionPage from './pages/TrackSelectionPage.tsx';
 import EndpointSelectionPage from './pages/EndpointSelectionPage.tsx';
 import OnBoardPage from './pages/OnboardPage.tsx';
@@ -13,6 +14,7 @@ export default function App() {
   // PAGES STATES
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isDataViewerPage, setIsDataViewerPage] = useState(false);
   const [isTrackSelectionOpen, setIsTrackSelectionPageOpen] = useState(false);
   const [isEndpointPageOpen, setIsEndpointPageOpen] = useState(false);
   const [isOnBoardPageOpen, setIsOnBoardPageOpen] = useState(false);
@@ -34,6 +36,18 @@ export default function App() {
   const handleCloseSettings = () => {
     setIsStartMenuOpen(true);
     setIsSettingsOpen(false);
+  }
+
+  // When opening session...
+  const handleOpenDataViewer = () => {
+    setIsDataViewerPage(true);
+    setIsStartMenuOpen(false);
+  }
+
+  // When opening session...
+  const handleCloseDataViewer = () => {
+    setIsDataViewerPage(false);
+    setIsStartMenuOpen(true);
   }
 
   // When opening session...
@@ -129,6 +143,7 @@ export default function App() {
         <StartMenuPage 
           onOpenSettings={handleOpenSettings} 
           onOpenSession={handleOpenSession}
+          onOpenDataViewer={handleOpenDataViewer}
         />
       )}
 
@@ -136,6 +151,12 @@ export default function App() {
       { isSettingsOpen && (
         <SettingsPage 
           onCloseSettings={handleCloseSettings}
+        />
+      )}
+
+      { isDataViewerPage && (
+        <DataViewerPage 
+          onCloseDataViewerPage={handleCloseDataViewer}
         />
       )}
 

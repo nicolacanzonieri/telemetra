@@ -4,6 +4,7 @@ import HeaderButton from '../components/HeaderButton';
 interface StartMenuPageProps {
     onOpenSettings: () => void;
     onOpenSession: () => void;
+    onOpenDataViewer: () => void;
 }
 
 interface MenuButtonProps {
@@ -19,7 +20,7 @@ function MenuButton({label, onClick}: MenuButtonProps) {
     );
 }
 
-export default function StartMenuPage({ onOpenSettings, onOpenSession }: StartMenuPageProps) {
+export default function StartMenuPage({ onOpenSettings, onOpenSession, onOpenDataViewer }: StartMenuPageProps) {
     // Load user theme preferences
     useTheme();
 
@@ -39,7 +40,7 @@ export default function StartMenuPage({ onOpenSettings, onOpenSession }: StartMe
                 </span>
                 
                 <MenuButton label="Start session" onClick={onOpenSession}/>
-                <MenuButton label="View sessions data"/>
+                <MenuButton label="View sessions data" onClick={onOpenDataViewer}/>
             </div>
         </div>
     );
