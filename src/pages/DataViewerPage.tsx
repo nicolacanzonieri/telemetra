@@ -40,41 +40,52 @@ function SessionButton({sessionId, trackName, date, onExport}: SessionButtonProp
 
 export default function DataViewerPage({onCloseDataViewerPage}: DataViewerPageProps) {
     const sessions = useLiveQuery(
-        () => db.sessions.orderBy('date').reverse().toArray() // Ordine decrescente (più recenti in alto)
+        () => db.sessions.orderBy('date').reverse().toArray()
     );
 
     const handleExportSession = async (sessionId: number, trackName: string) => {
         try {
-            // Recover the specific session
             const sessionData = await db.sessions.get(sessionId);
             if (!sessionData) {
                 alert("Errore: Sessione non trovata");
                 return;
             }
 
-            // Retrieve the associated track (to get the coordinates of the gates)
-            // Note: If multiple tracks with the same name exist, it takes the first one found.
-            // Ideally, in the future, you should link session -> trackId instead of trackName.
-            const trackData = await db.tracks.where('name').equals(trackName).first();
+            let trackData = await db.tracks
+                .where('name')
+                .equals(trackName.toUpperCase())
+                .first();
 
-            // Recover all laps from the selected session
-            const lapsData = await db.laps.where('sessionId').equals(sessionId).toArray();
+            if (!trackData) {
+                trackData = await db.tracks
+                    .where('name')
+                    .equals(sessionData.trackName)
+                    .first();
+            }
 
-            // Recover all the samples of the selected session
-            const samplesData = await db.samples.where('sessionId').equals(sessionId).toArray();
+            const lapsData = await db.laps
+                .where('sessionId')
+                .equals(sessionId)
+                .toArray();
+
+            const samplesData = await db.samples
+                .where('sessionId')
+                .equals(sessionId)
+                .toArray();
 
             const exportObject = {
-                laps: lapsData,
-                samples: samplesData,
                 sessions: [sessionData],
-                tracks: trackData ? [trackData] : []
+                tracks: trackData ? [trackData] : [],
+                laps: lapsData,
+                samples: samplesData
             };
 
             const blob = new Blob([JSON.stringify(exportObject, null, 2)], { type: "application/json" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `telemetra_dump_${trackName}_${sessionId}.json`;
+            const timestamp = new Date(sessionData.date).toISOString().replace(/[:.]/g, '-');
+            a.download = `telemetra_${trackName.replace(/\s+/g, '_')}_${timestamp}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -82,7 +93,7 @@ export default function DataViewerPage({onCloseDataViewerPage}: DataViewerPagePr
 
         } catch (e) {
             console.error("Export failed:", e);
-            alert("Errore durante l'export dei dati.");
+            alert("Error during the export of files");
         }
     };
     
