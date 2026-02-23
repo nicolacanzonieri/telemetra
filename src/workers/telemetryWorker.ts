@@ -18,6 +18,7 @@ const BATCH_SIZE = 50;          // Samples to buffer before sending to UI/DB
 
 // --- SESSION STATE ---
 let isRunning = false;
+let trackType: 'Circuit' | 'Sprint' = 'Circuit';
 let currentSessionId: number | null = null;
 let startGate: { p1: [number, number], p2: [number, number] } | null = null;
 let finishGate: { p1: [number, number], p2: [number, number] } | null = null;
@@ -25,6 +26,7 @@ let finishGate: { p1: [number, number], p2: [number, number] } | null = null;
 // --- KALMAN FILTER & MOTION STATE ---
 let velocity = 0;               // m/s (Fused state)
 let variance = 1;               // Uncertainty tracker
+let accelBiasY = 0;             // Calibration bias to prevent velocity drift
 let filteredGx = 0;             // Smoothed Lateral G
 let filteredGy = 0;             // Smoothed Longitudinal G
 let distanceTraveled = 0;       // Meters since current lap start
@@ -44,6 +46,7 @@ let sampleBuffer: any[] = [];
 export type WorkerMessage =
   | { type: 'START_SESSION'; payload: { sessionId: number; trackName: string, trackType: 'Circuit' | 'Sprint'; startGate: Gate | null; finishGate: Gate | null } }
   | { type: 'STOP_SESSION' }
+  | { type: 'SET_CALIBRATION'; payload: { biasY: number } } // For syncing bias
   | { type: 'SENSOR_DATA'; payload: { accel: DeviceMotionEventAcceleration; timestamp: number } }
   | { type: 'GPS_DATA'; payload: { lat: number; lng: number; speed: number; timestamp: number } }
   | { type: 'SET_REFERENCE_LAP'; payload: { samples: { distance: number; time: number }[] }};
@@ -98,6 +101,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
   switch (message.type) {
     case 'START_SESSION':
         currentSessionId = message.payload.sessionId;
+        trackType = message.payload.trackType;
         isRunning = true;
         velocity = 0;
         variance = 1;
@@ -116,6 +120,10 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
           p1: [message.payload.finishGate.p1.lat, message.payload.finishGate.p1.lng],
           p2: [message.payload.finishGate.p2.lat, message.payload.finishGate.p2.lng]
         } : startGate;
+        break;
+
+    case 'SET_CALIBRATION':
+        accelBiasY = message.payload.biasY;
         break;
 
     case 'STOP_SESSION':
@@ -144,7 +152,8 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
 
         // 2. Kalman Filter: Prediction Phase
         if (dtA > 0 && dtA < 0.2) {
-            let accelMS2 = (accel.y || 0) * 9.81; // Using Y as Longitudinal (calibration dependent)
+            // Apply Calibration Bias to the accelerometer input
+            let accelMS2 = ((accel.y || 0) - accelBiasY) * 9.81; 
             if (Math.abs(accelMS2) < VELOCITY_DEADZONE) accelMS2 = 0;
 
             velocity += accelMS2 * dtA;
@@ -163,9 +172,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
             while (lastRefIndex < referenceLap.length - 1 && referenceLap[lastRefIndex].distance < distanceTraveled) {
                 lastRefIndex++;
             }
-            
-            const refPoint = referenceLap[lastRefIndex];
-            currentDelta = (timeSinceLapStart - refPoint.time) / 1000;
+            currentDelta = (timeSinceLapStart - referenceLap[lastRefIndex].time) / 1000;
         }
 
         self.postMessage({
@@ -182,7 +189,6 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
     case 'GPS_DATA':
         if (!isRunning || !finishGate) return;
         const { lat, lng, speed: gpsSpeedMS, timestamp: gpsTimestamp } = message.payload;
-        const currentPos: [number, number] = [lat, lng];
         
         // 1. Kalman Filter: Correction Phase
         const kalmanGain = variance / (variance + GPS_NOISE);
@@ -191,13 +197,9 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
 
         // 2. Gate Crossing Logic
         if (lastGpsPosition && lastGpsTimestamp) {
-            const intersectT = getIntersection(
-                lastGpsPosition[0], lastGpsPosition[1], currentPos[0], currentPos[1],
-                finishGate.p1[0], finishGate.p1[1], finishGate.p2[0], finishGate.p2[1]
-            );
+            const intersectT = getIntersection(lastGpsPosition[0], lastGpsPosition[1], lat, lng, finishGate.p1[0], finishGate.p1[1], finishGate.p2[0], finishGate.p2[1]);
 
             if (intersectT !== null) {
-                // Precise crossing time calculation via interpolation
                 const exactTime = lastGpsTimestamp + (gpsTimestamp - lastGpsTimestamp) * intersectT;
 
                 if (lapStartTime === null) {
@@ -207,23 +209,24 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
                     self.postMessage({ type: 'STARTING_LAP', payload: { startTime: exactTime } });
                 } else {
                     const lapTimeMs = exactTime - lapStartTime;
+                    self.postMessage({ type: 'LAP_COMPLETED', payload: { lapTime: lapTimeMs } });
+                    
+                    // If Sprint, stop the engine after finish line
+                    if (trackType === 'Sprint') {
+                        isRunning = false;
+                        return;
+                    }
+
                     lapStartTime = exactTime;
                     distanceTraveled = 0;
                     lastRefIndex = 0;
-                    self.postMessage({ type: 'LAP_COMPLETED', payload: { lapTime: lapTimeMs } });
                 }
             }
         }
-
+        
         // 3. Persistent Storage
-        bufferSample({
-            timestamp: gpsTimestamp,
-            lat,
-            lng,
-            speed: velocity,
-        });
-
-        lastGpsPosition = currentPos;
+        bufferSample({ timestamp: gpsTimestamp, lat, lng, speed: velocity, gLat: filteredGx, gLong: filteredGy });
+        lastGpsPosition = [lat, lng];
         lastGpsTimestamp = gpsTimestamp;
         break;
   }

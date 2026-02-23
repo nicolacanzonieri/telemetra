@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import TelemetryWorker from '../workers/telemetryWorker?worker';
-import type { WorkerResponse } from '../workers/telemetryWorker';
 import { db, type Gate } from "../db/database.ts";
 
 /**
@@ -84,7 +83,7 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
     const [lastLapTime, setLastLapTime] = useState(0);
     const [bestLapTime, setBestLapTime] = useState(0);
     const [delta, setDelta] = useState(0);
-    const [sampleCount, setSampleCount] = useState(0);
+    const [_sampleCount, setSampleCount] = useState(0);
 
     const workerRef = useRef<Worker | null>(null);
     const isCalibratedRef = useRef(false);
@@ -92,6 +91,7 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
     const lapStartTimeRef = useRef<number | null>(null);
     const requestRef = useRef<number>(0);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const lapCounter = useRef(1); // Tracker for current lap number
     const sessionId = useRef(Date.now()).current;
 
     // --- LOGIC: DATA PREPARATION ---
@@ -106,7 +106,6 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
             .sortBy('bestLapTime');
 
         if (bestSession.length === 0) return null;
-
         const session = bestSession[0];
         setBestLapTime(session.bestLapTime || 0);
 
@@ -163,12 +162,12 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
 
         const init = async () => {
             // 1. Create session entry
-            await db.sessions.add({
-                id: sessionId,
-                date: Date.now(),
-                trackName,
-                trackType: 'Circuit',
-                bestLapTime: null
+            await db.sessions.add({ 
+                id: sessionId, 
+                date: Date.now(), 
+                trackName, 
+                trackType: 'Circuit', 
+                bestLapTime: null 
             });
 
             // 2. Spawn Telemetry Worker
@@ -213,15 +212,18 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
                     case 'STARTING_LAP':
                         lapStartTimeRef.current = payload.startTime;
                         break;
-
                     case 'LAP_COMPLETED':
-                        setLastLapTime(payload.lapTime);
+                        const time = payload.lapTime;
+                        setLastLapTime(time);
                         lapStartTimeRef.current = Date.now();
                         
-                        // Update Best Lap in Session
-                        if (!bestLapTime || payload.lapTime < bestLapTime) {
-                            setBestLapTime(payload.lapTime);
-                            await db.sessions.update(sessionId, { bestLapTime: payload.lapTime });
+                        // Persistent Lap Storage
+                        const isNewBest = !bestLapTime || time < bestLapTime;
+                        await db.laps.add({ sessionId, lapNumber: lapCounter.current++, timeMs: time, isBest: isNewBest });
+
+                        if (isNewBest) {
+                            setBestLapTime(time);
+                            await db.sessions.update(sessionId, { bestLapTime: time });
                         }
                         break;
                 }
@@ -241,14 +243,14 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
         // 7. GPS Stream
         const watchId = navigator.geolocation.watchPosition(
             (pos) => {
-                workerRef.current?.postMessage({
-                    type: 'GPS_DATA',
-                    payload: {
-                        lat: pos.coords.latitude,
-                        lng: pos.coords.longitude,
-                        speed: pos.coords.speed || 0,
-                        timestamp: pos.timestamp
-                    }
+                workerRef.current?.postMessage({ 
+                    type: 'GPS_DATA', 
+                    payload: { 
+                        lat: pos.coords.latitude, 
+                        lng: pos.coords.longitude, 
+                        speed: pos.coords.speed || 0, 
+                        timestamp: pos.timestamp 
+                    } 
                 });
             },
             () => {},
@@ -287,16 +289,19 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
             {/* OVERLAYS */}
             {needsPermission && (
                 <div className="fixed inset-0 flex items-center justify-center z-50 bg-bg-1">
-                    <button onClick={requestPermission} className="px-8 py-4 border border-border-1 text-text-1 font-mono uppercase tracking-widest">
-                        Enable Sensors
-                    </button>
+                    <button onClick={requestPermission} className="px-8 py-4 border border-border-1 text-text-1 font-mono uppercase tracking-widest">Enable Sensors</button>
                 </div>
             )}
 
             {!calibrateState && (
                 <div className="fixed inset-0 flex items-center justify-center z-40 bg-bg-1">
                     <button 
-                        onClick={() => { setCalibrateState(true); isCalibratedRef.current = true; }} 
+                        onClick={() => { 
+                            setCalibrateState(true); 
+                            isCalibratedRef.current = true;
+                            // SYNC BIAS WITH WORKER
+                            workerRef.current?.postMessage({ type: 'SET_CALIBRATION', payload: { biasY: calibratedRef.current.y } });
+                        }} 
                         className="px-8 py-4 border border-border-1 text-text-1 font-mono uppercase tracking-widest"
                     >
                         Calibrate Bias
@@ -307,37 +312,17 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
             <DeltaBar delta={delta} />
             
             <div className="w-full flex-1 flex flex-col p-p-md overflow-hidden">
-                {/* TIMERS */}
                 <div className="flex flex-col flex-1 gap-4">
-                    <div className="flex flex-col">
-                        <TimerLabel label="Live" />
-                        <Timer value={formatMs(liveLapMs)} />
-                    </div>
-                    <div className="flex flex-col opacity-60">
-                        <TimerLabel label="Last Lap" />
-                        <Timer value={formatMs(lastLapTime)} />
-                    </div>
-                    <div className="flex flex-col text-text-2">
-                        <TimerLabel label="Best Lap" />
-                        <Timer value={formatMs(bestLapTime)} />
-                    </div>
+                    <div className="flex flex-col"><TimerLabel label="Live" /><Timer value={formatMs(liveLapMs)} /></div>
+                    <div className="flex flex-col opacity-60"><TimerLabel label="Last Lap" /><Timer value={formatMs(lastLapTime)} /></div>
+                    <div className="flex flex-col text-text-2"><TimerLabel label="Best Lap" /><Timer value={formatMs(bestLapTime)} /></div>
                 </div>
 
-                {/* G-METER VISUALIZER */}
                 <div className="w-full h-[35%] flex items-center justify-center relative">
                     <div className="relative w-56 h-56 flex items-center justify-center">
-                        <div className="absolute w-full h-px bg-neutral-800" />
-                        <div className="absolute h-full w-px bg-neutral-800" />
-                        <div className="absolute w-32 h-32 border border-neutral-700 rounded-full" />
-                        <div className="absolute w-full h-full border border-neutral-600 rounded-full" />
-                        
-                        <div 
-                            className="w-6 h-6 bg-white rounded-full shadow-[0_0_20px_white] transition-transform duration-75 ease-out z-10"
-                            style={{ transform: `translate(${gForce.x}px, ${gForce.y}px)` }}
-                        />
-                    </div>
-                    <div className="absolute bottom-0 right-0 p-2 font-mono text-[10px] opacity-30">
-                        Samples: {sampleCount}
+                        <div className="absolute w-full h-px bg-neutral-800" /><div className="absolute h-full w-px bg-neutral-800" />
+                        <div className="absolute w-32 h-32 border border-neutral-700 rounded-full" /><div className="absolute w-full h-full border border-neutral-600 rounded-full" />
+                        <div className="w-6 h-6 bg-white rounded-full shadow-[0_0_20px_white] transition-transform duration-75 ease-out z-10" style={{ transform: `translate(${gForce.x}px, ${gForce.y}px)` }} />
                     </div>
                 </div>
             </div>
