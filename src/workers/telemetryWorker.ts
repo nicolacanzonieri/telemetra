@@ -14,7 +14,7 @@ const ACCEL_NOISE = 0.5;        // Process noise for Kalman Filter
 const GPS_NOISE = 2.0;          // Measurement noise for Kalman Filter
 const ACCEL_SMOOTHING = 0.15;   // Low-pass filter for G-ball visualization
 const VELOCITY_DEADZONE = 0.05; // M/S threshold to ignore stationary sensor drift
-const BATCH_SIZE = 50;          // Samples to buffer before sending to UI/DB
+const BATCH_SIZE = 5;           // Samples to buffer before sending to UI/DB (RIDOTTO PER SICUREZZA)
 
 // --- SESSION STATE ---
 let isRunning = false;
@@ -25,7 +25,7 @@ let finishGate: { p1: [number, number], p2: [number, number] } | null = null;
 
 // --- KALMAN FILTER & MOTION STATE ---
 let velocity = 0;               // m/s (Fused state)
-let lastVelocity = 0;           // Speed during the previous GPS tick
+let lastVelocity = 0;           // Speed during the previous GPS tick (for Kinematics)
 let variance = 1;               // Uncertainty tracker
 let accelBiasY = 0;             // Calibration bias to prevent velocity drift
 let filteredGx = 0;             // Smoothed Lateral G
@@ -61,6 +61,7 @@ export type WorkerResponse =
 /**
  * Calculates if two line segments intersect.
  * Used for detecting if the vehicle crossed the start/finish gate.
+ * Returns T (fraction 0..1 along the segment AB)
  */
 function getIntersection(
   ax: number, ay: number, bx: number, by: number,
@@ -76,7 +77,7 @@ function getIntersection(
 }
 
 /**
- * Helper function to calculate the distance in meters between two
+ * Helper function to calculate the distance in meters between two 
  * coordinates (simplified Haversine formula)
  */
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -124,6 +125,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
       trackType = message.payload.trackType;
       isRunning = true;
       velocity = 0;
+      lastVelocity = 0;
       variance = 1;
       distanceTraveled = 0;
       lastRefIndex = 0;
@@ -218,39 +220,30 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
 
       // 2. Gate Crossing Logic
       if (lastGpsPosition && lastGpsTimestamp) {
-        // Calculate T (geometric fraction, 0.0 - 1.0)
-        const intersectT = getIntersection(
-          lastGpsPosition[0], lastGpsPosition[1],
-          lat, lng,
-          finishGate.p1[0], finishGate.p1[1],
-          finishGate.p2[0], finishGate.p2[1]
-        );
+        const intersectT = getIntersection(lastGpsPosition[0], lastGpsPosition[1], lat, lng, finishGate.p1[0], finishGate.p1[1], finishGate.p2[0], finishGate.p2[1]);
 
         if (intersectT !== null) {
+          // --- KINEMATIC INTERPOLATION (QUADRATIC) ---
+
           // Calculate physical distance between PREVIOUS point and INTERSECTION
-          // The geometric interpolation (intersectT) tells us WHERE the line is relative to the segment
           const segmentDist = getDistance(lastGpsPosition[0], lastGpsPosition[1], lat, lng);
           const distanceToLine = segmentDist * intersectT;
 
           // Kinematic parameters
-          const dt = (gpsTimestamp - lastGpsTimestamp) / 1000; // Delta time in seconds (e.g., 1.0s)
-          const v0 = lastVelocity; // Initial velocity (m/s)
-          const v1 = currentFilteredVelocity; // Final velocity (m/s)
+          const dt = (gpsTimestamp - lastGpsTimestamp) / 1000; // Delta time in seconds
+          const v0 = lastVelocity; // Velocity at start of segment
+          const v1 = currentFilteredVelocity; // Velocity at end of segment
 
-          // Average acceleration in the segment: a = (v1 - v0) / t
-          // If dt is near 0 or velocity is constant, fallback to linear interpolation
           let preciseDeltaTime = 0;
 
+          // If velocity change is negligible or dt is invalid, fallback to Linear
           if (Math.abs(v1 - v0) < 0.1 || dt <= 0) {
-            // Constant velocity: classic linear interpolation
             preciseDeltaTime = dt * intersectT;
           } else {
-            // Variable velocity: Solve d = v0 * t + 0. 5 * a * t^2 for t
-            // 0.5 * a * t^2 + v0 * t - d = 0
+            // Solve d = v0*t + 0.5*a*t^2 for t
+            // 0.5*a*t^2 + v0*t - d = 0
             const accel = (v1 - v0) / dt;
 
-            // Quadratic formula: t = (-b + sqrt(b^2 - 4ac)) / 2a
-            // Here: a = 0.5*accel, b = v0, c = - distanceToLine
             const A = 0.5 * accel;
             const B = v0;
             const C = -distanceToLine;
@@ -260,20 +253,19 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
             if (delta >= 0) {
               const t1 = (-B + Math.sqrt(delta)) / (2 * A);
               const t2 = (-B - Math.sqrt(delta)) / (2 * A);
-              // Pick the positive and sensible solution (less than dt)
+
+              // Pick positive solution closest to expected linear time
               if (t1 >= 0 && t1 <= dt * 1.5) preciseDeltaTime = t1;
               else if (t2 >= 0 && t2 <= dt * 1.5) preciseDeltaTime = t2;
               else preciseDeltaTime = dt * intersectT; // Fallback
             } else {
-              preciseDeltaTime = dt * intersectT; // Mathematical fallback
+              preciseDeltaTime = dt * intersectT; // Fallback
             }
           }
 
-          // Calculate exact time
-          // Convert delta seconds to ms and add
+          // Calculate Exact Time
           const exactTime = lastGpsTimestamp + (preciseDeltaTime * 1000);
 
-          // Lap management logic, best lap, ...
           if (lapStartTime === null) {
             lapStartTime = exactTime;
             distanceTraveled = 0;
@@ -283,10 +275,12 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
             const lapTimeMs = exactTime - lapStartTime;
             self.postMessage({ type: 'LAP_COMPLETED', payload: { lapTime: lapTimeMs } });
 
+            // If Sprint, stop the engine after finish line
             if (trackType === 'Sprint') {
               isRunning = false;
               return;
             }
+
             lapStartTime = exactTime;
             distanceTraveled = 0;
             lastRefIndex = 0;
@@ -294,13 +288,21 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
         }
       }
 
-      // 3. Persistent Storage
-      bufferSample({ timestamp: gpsTimestamp, lat, lng, speed: velocity, gLat: filteredGx, gLong: filteredGy });
+      // 3. Persistent Storage (Added rawSpeed for post-analysis)
+      bufferSample({
+        timestamp: gpsTimestamp,
+        lat,
+        lng,
+        speed: velocity, // Filtered Speed
+        rawSpeed: gpsSpeedMS, // Raw GPS Speed (New!)
+        gLat: filteredGx,
+        gLong: filteredGy
+      });
 
-      // STATE UPDATE FOR NEXT LAP
+      // 4. Update State for Next Tick
       lastGpsPosition = [lat, lng];
       lastGpsTimestamp = gpsTimestamp;
-      lastVelocity = velocity;
+      lastVelocity = velocity; // Important for v0 in next kinematic calc
       break;
   }
 };
