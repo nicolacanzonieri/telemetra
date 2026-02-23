@@ -91,8 +91,9 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
     const lapStartTimeRef = useRef<number | null>(null);
     const requestRef = useRef<number>(0);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const lapCounter = useRef(1); // Tracker for current lap number
+    const lapCounter = useRef(1); 
     const sessionId = useRef(Date.now()).current;
+    const bestLapTimeRef = useRef<number>(0); 
 
     // --- LOGIC: DATA PREPARATION ---
 
@@ -102,18 +103,45 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
     const prepareReferenceLap = async (tName: string) => {
         const bestSession = await db.sessions
             .where('trackName').equals(tName)
-            .filter(s => s.bestLapTime !== null)
+            .filter(s => s.bestLapTime !== null && s.bestLapTime > 0) // Ensure valid time
             .sortBy('bestLapTime');
 
         if (bestSession.length === 0) return null;
         const session = bestSession[0];
-        setBestLapTime(session.bestLapTime || 0);
+        
+        const sessionBestTime = session.bestLapTime || 0;
+        setBestLapTime(sessionBestTime);
+        bestLapTimeRef.current = sessionBestTime; // Sync ref
 
-        const samples = await db.samples.where('sessionId').equals(session.id!).toArray();
-        if (samples.length === 0) return null;
+        const bestLapRecord = await db.laps
+            .where({ sessionId: session.id, isBest: true })
+            .first();
 
-        const startT = samples[0].timestamp;
-        return samples.map(s => ({
+        if (!bestLapRecord) return null;
+
+        const allSamples = await db.samples.where('sessionId').equals(session.id!).toArray();
+        if (allSamples.length === 0) return null;
+
+        const targetLapSamples = [];
+        let currentLapIdx = 1;
+        
+        for (let i = 1; i < allSamples.length; i++) {
+            const prev = allSamples[i-1];
+            const curr = allSamples[i];
+
+            if (curr.distance < prev.distance && prev.distance > 100) {
+                currentLapIdx++;
+            }
+
+            if (currentLapIdx === bestLapRecord.lapNumber) {
+                targetLapSamples.push(curr);
+            }
+        }
+
+        if (targetLapSamples.length === 0) return null;
+
+        const startT = targetLapSamples[0].timestamp;
+        return targetLapSamples.map(s => ({
             distance: s.distance,
             time: s.timestamp - startT
         }));
@@ -176,8 +204,12 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
 
             // 3. Load Reference Data for Delta Bar
             const refSamples = await prepareReferenceLap(trackName);
-            if (refSamples) {
+            
+            if (refSamples && refSamples.length > 0) {
+                console.log("Reference Lap Loaded:", refSamples.length, "samples");
                 worker.postMessage({ type: 'SET_REFERENCE_LAP', payload: { samples: refSamples } });
+            } else {
+                console.log("No Reference Lap found (First run or logic error)");
             }
 
             // 4. Start Session
@@ -217,12 +249,17 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
                         setLastLapTime(time);
                         lapStartTimeRef.current = Date.now();
                         
+                        const currentBest = bestLapTimeRef.current;
+                        const isNewBest = currentBest === 0 || time < currentBest;
+                        
+                        console.log(`Lap ${lapCounter.current} Done: ${time}ms. Best was: ${currentBest}. Is New Best? ${isNewBest}`);
+
                         // Persistent Lap Storage
-                        const isNewBest = !bestLapTime || time < bestLapTime;
                         await db.laps.add({ sessionId, lapNumber: lapCounter.current++, timeMs: time, isBest: isNewBest });
 
                         if (isNewBest) {
                             setBestLapTime(time);
+                            bestLapTimeRef.current = time; // Aggiorna il ref immediatamente
                             await db.sessions.update(sessionId, { bestLapTime: time });
                         }
                         break;
@@ -254,7 +291,7 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
                 });
             },
             () => {},
-            { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 1000 } // FIX: Timeout ridotto per più reattività
         );
 
         return () => {
@@ -263,7 +300,7 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
             cancelAnimationFrame(requestRef.current);
             workerRef.current?.terminate();
         };
-    }, [handleMotion, trackName]);
+    }, [handleMotion, trackName]); // Dependencies
 
     // --- UI INTERACTION ---
 
