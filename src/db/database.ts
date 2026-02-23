@@ -22,35 +22,41 @@ export interface Session {
     bestLapTime: number | null;
 }
 
+export interface Lap {
+    id?: number;
+    sessionId: number;
+    lapNumber: number;
+    timeMs: number;
+    isBest: boolean;
+}
+
 export interface Sample {
     id?: number;
     sessionId: number;
     timestamp: number;
     lat: number;
     lng: number;
-    gLat: number;
-    gLong: number;
-    delta: number;
     speed: number;
     distance: number;
+    gLat: number;
+    gLong: number;
 }
 
 export class TelemetraDB extends Dexie {
     tracks!: Table<Track>;
     sessions!: Table<Session>;
     samples!: Table<Sample>;
+    laps!: Table<Lap>;
 
     constructor() {
         super('TelemetraDB');
         this.version(1).stores({
             tracks: '++id, name, type',
             sessions: '++id, date, trackName, bestLapTime',
-            samples: '++id, sessionId, timestamp'
+            samples: '++id, sessionId, timestamp',
+            laps: '++id, sessionId, lapNumber'
         });
     }
 }
 
 export const db = new TelemetraDB();
-
-(window as any).db = db;
-console.log("TelemetraDB loaded. Write 'db' in the console to inspect it.");
