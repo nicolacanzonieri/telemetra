@@ -3,6 +3,15 @@ import TelemetryWorker from '../workers/telemetryWorker?worker';
 import type { WorkerResponse } from '../workers/telemetryWorker';
 import { db, type Gate } from "../db/database.ts";
 
+/**
+ * ONBOARD PAGE (DASHBOARD)
+ * Responsibilities:
+ * 1. Orchestrates the Telemetry Web Worker lifecycle.
+ * 2. Manages high-frequency UI updates (G-Force, Delta, Timers).
+ * 3. Handles hardware permissions and sensor calibration.
+ * 4. Persists lap timing data to IndexedDB.
+ */
+
 interface OnBoardPageProps {
     trackName: string;
     startGate: Gate | null;
@@ -10,97 +19,115 @@ interface OnBoardPageProps {
     onCloseOnboardPage: () => void;
 }
 
-interface TimerProps {
-    value: string;
-}
-
-interface TimerLabelProps {
-    label: string;
-}
-
 interface DeviceMotionEventiOS extends DeviceMotionEvent {
     requestPermission?: () => Promise<'granted' | 'denied'>;
 }
 
-function TimerLabel({label}: TimerLabelProps) {
+// --- SUB-COMPONENTS ---
+
+const TimerLabel = ({ label }: { label: string }) => (
+    <span className="text-xl font-bold font-mono tracking-widest uppercase text-text-1">
+        {label}
+    </span>
+);
+
+const Timer = ({ value }: { value: string }) => (
+    <span className="text-[45px] font-bold font-mono tracking-widest uppercase text-text-1">
+        {value}
+    </span>
+);
+
+/**
+ * Visual Delta Bar: Green (left) for gain, Red (right) for loss.
+ * Normalizes a +/- 2.0s range for the visualization.
+ */
+function DeltaBar({ delta }: { delta: number }) {
+    const clampedDelta = Math.max(-2, Math.min(2, delta));
+    const percentage = Math.abs(clampedDelta) / 2 * 100;
+    const isFaster = delta <= 0;
+
     return (
-        <span className="text-xl font-bold font-mono tracking-widest uppercase text-text-1">
-            {label}
-        </span>
+        <div className="w-full h-12 bg-neutral-900 relative overflow-hidden border-y border-border-1/20">
+            <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-white z-10"></div>
+            <div 
+                className={`absolute top-0 bottom-0 transition-all duration-100 ${isFaster ? 'bg-green-500' : 'bg-red-500'}`}
+                style={{
+                    left: isFaster ? `${50 - percentage / 2}%` : '50%',
+                    right: isFaster ? '50%' : `${50 - percentage / 2}%`,
+                    width: `${percentage / 2}%`
+                }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center mix-blend-difference font-mono font-bold text-2xl text-white">
+                {delta > 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2)}
+            </div>
+        </div>
     );
 }
 
-function Timer({value}: TimerProps) {
-    return (
-        <span className="text-[45px] font-bold font-mono tracking-widest uppercase text-text-1">
-            {value}
-        </span>
-    );
-}
+// --- UTILS ---
 
 function formatMs(ms: number) {
+    if (ms === 0) return "00:00:000";
     const minutes = Math.floor(ms / 60000);
     const seconds = Math.floor((ms % 60000) / 1000);
     const milli = Math.floor(ms % 1000);
-
-    return {
-        // padStart aggiunge lo zero iniziale se la cifra è singola
-        minStr: minutes.toString().padStart(2, '0'),
-        secStr: seconds.toString().padStart(2, '0'),
-        milliStr: milli.toString().padStart(3, '0'),
-        total: `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${milli.toString().padStart(3, '0')}`
-    };
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${milli.toString().padStart(3, '0')}`;
 }
 
-// @ts-ignore
 export default function OnBoardPage({ trackName, startGate, finishGate, onCloseOnboardPage }: OnBoardPageProps) {
+    // --- STATE & REFS ---
     const [needsPermission, setNeedsPermission] = useState(false);
     const [calibrateState, setCalibrateState] = useState(false);
-    const isCalibratedRef = useRef(false);
-    const calibratedRef = useRef({x: 0, y: 0});
     const [isPressing, setIsPressing] = useState(false);
-    const workerRef = useRef<Worker | null>(null);
     const [gForce, setGForce] = useState({ x: 0, y: 0 });
-    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    
-    const sessionId = Date.now();
-    const [liveLapMs, setLiveLapMs] = useState<number>(0);
-    const [lastLapTime, setLastLapTime] = useState<number>(0);
+    const [liveLapMs, setLiveLapMs] = useState(0);
+    const [lastLapTime, setLastLapTime] = useState(0);
+    const [bestLapTime, setBestLapTime] = useState(0);
+    const [delta, setDelta] = useState(0);
+    const [sampleCount, setSampleCount] = useState(0);
+
+    const workerRef = useRef<Worker | null>(null);
+    const isCalibratedRef = useRef(false);
+    const calibratedRef = useRef({ x: 0, y: 0 });
     const lapStartTimeRef = useRef<number | null>(null);
-    const requestRef = useRef<number>(null);
-    
-    // DEBUG PURPOSE ONLY
-    const [showDebug, _setShowDebug] = useState(true);
-    const [posLan, setPosLan] = useState<number>();
-    const [posLng, setPosLng] = useState<number>();
-    const [accuracy, setAccuracy] = useState<number>();
-    const [gpsError, setGpsError] = useState<string>();
-    const [sampleCount, setSampleCount] = useState<number>(0);
+    const requestRef = useRef<number>(0);
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const sessionId = useRef(Date.now()).current;
+
+    // --- LOGIC: DATA PREPARATION ---
+
+    /**
+     * Searches for the best lap in history for this track to provide Delta comparison.
+     */
+    const prepareReferenceLap = async (tName: string) => {
+        const bestSession = await db.sessions
+            .where('trackName').equals(tName)
+            .filter(s => s.bestLapTime !== null)
+            .sortBy('bestLapTime');
+
+        if (bestSession.length === 0) return null;
+
+        const session = bestSession[0];
+        setBestLapTime(session.bestLapTime || 0);
+
+        const samples = await db.samples.where('sessionId').equals(session.id!).toArray();
+        if (samples.length === 0) return null;
+
+        const startT = samples[0].timestamp;
+        return samples.map(s => ({
+            distance: s.distance,
+            time: s.timestamp - startT
+        }));
+    };
+
+    // --- LOGIC: SENSORS & ANIMATION ---
 
     const animate = useCallback(() => {
         if (lapStartTimeRef.current !== null) {
-            const now = Date.now();
-            setLiveLapMs(now - lapStartTimeRef.current);
+            setLiveLapMs(Date.now() - lapStartTimeRef.current);
         }
         requestRef.current = requestAnimationFrame(animate);
     }, []);
-    
-    const handleStartPress = () => {
-        setIsPressing(true);
-        timerRef.current = window.setTimeout(() => {
-            if (onCloseOnboardPage) {
-                onCloseOnboardPage();
-            }
-        }, 3000);
-    };
-
-    const handleEndPress = () => {
-        setIsPressing(false);
-        if (timerRef.current) {
-            window.clearTimeout(timerRef.current);
-            timerRef.current = null;
-        }
-    };
 
     const handleMotion = useCallback((event: DeviceMotionEvent) => {
         if (event.accelerationIncludingGravity && workerRef.current) {
@@ -120,110 +147,90 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
 
     const requestPermission = async () => {
         const explicitEvent = DeviceMotionEvent as unknown as DeviceMotionEventiOS;
-        
-        // Check if the requestPermission method exists in the current browser
         if (typeof explicitEvent.requestPermission === 'function') {
-            try {
-                const permissionState = await explicitEvent.requestPermission();
-                if (permissionState === 'granted') {
-                    setNeedsPermission(false);
-                    window.addEventListener('devicemotion', handleMotion);
-                }
-            } catch (error) {
-                console.error(error);
+            const state = await explicitEvent.requestPermission();
+            if (state === 'granted') {
+                setNeedsPermission(false);
+                window.addEventListener('devicemotion', handleMotion);
             }
         }
     };
 
-    useEffect(() => {
-        requestRef.current = requestAnimationFrame(animate);
-        return () => {
-            if (requestRef.current) cancelAnimationFrame(requestRef.current);
-        };
-    }, [animate]);
+    // --- LIFECYCLE: WORKER & SESSION INITIALIZATION ---
 
     useEffect(() => {
-        const initSession = async () => {
+        requestRef.current = requestAnimationFrame(animate);
+
+        const init = async () => {
+            // 1. Create session entry
             await db.sessions.add({
                 id: sessionId,
                 date: Date.now(),
-                trackName: trackName,
+                trackName,
                 trackType: 'Circuit',
                 bestLapTime: null
             });
-            console.log("DB: Session record created");
-        };
 
-        initSession();
+            // 2. Spawn Telemetry Worker
+            const worker = new TelemetryWorker();
+            workerRef.current = worker;
 
-        const worker = new TelemetryWorker();
-        workerRef.current = worker;
-
-        worker.postMessage({ 
-            type: 'START_SESSION', 
-            payload: { 
-                sessionId: sessionId,
-                trackName: trackName,
-                trackType: 'Circuit', 
-                startGate: startGate,
-                finishGate: finishGate
-            } 
-        });
-
-        worker.onmessage = async (e: MessageEvent<WorkerResponse | {type: 'SAVE_BATCH', payload: any[]}>) => {
-            const data = e.data;
-
-            switch (data.type) {
-                case 'UPDATE_STATS':
-                    if (isCalibratedRef.current) {
-                        const { currentG } = data.payload;
-                        setGForce({
-                            x: (currentG.x - calibratedRef.current.x) * 20,
-                            y: (currentG.y - calibratedRef.current.y) * -20
-                        });
-                    } else {
-                        const { currentG } = data.payload;
-                        calibratedRef.current.x = currentG.x;
-                        calibratedRef.current.y = currentG.y;
-                    }
-                    break;
-
-                case 'SAVE_BATCH':
-                    try {
-                        await db.samples.bulkAdd(data.payload);
-                        const startTime = performance.now();
-                        const duration = performance.now() - startTime;
-                        console.log(`💾 DB: Saved ${data.payload.length} samples in ${duration.toFixed(2)}ms`);
-                        const count = await db.samples.count();
-                        setSampleCount(count);
-                    } catch (err) {
-                        console.error("Error while saving the batch:", err);
-                    }
-                    break;
-
-                case 'STARTING_LAP':
-                    lapStartTimeRef.current = data.payload.startTime;
-                    break;
-
-                case 'LAP_COMPLETED':
-                    const totalMs = data.payload.lapTime; 
-                    console.log(`SESSION: LAP COMPLETED WITH TIME: ${formatMs(data.payload.lapTime).total}`);
-
-                    setLastLapTime(totalMs);
-                    lapStartTimeRef.current = Date.now(); 
-                    
-                    const sessionLapCompleted = await db.sessions.get(sessionId);
-                    if (!sessionLapCompleted?.bestLapTime || data.payload.lapTime < sessionLapCompleted.bestLapTime) {
-                        await db.sessions.update(sessionId, { bestLapTime: data.payload.lapTime });
-                    }
-                    break;
-
-                default:
-                    console.warn("Worker message not recognized:", data);
-                    break;
+            // 3. Load Reference Data for Delta Bar
+            const refSamples = await prepareReferenceLap(trackName);
+            if (refSamples) {
+                worker.postMessage({ type: 'SET_REFERENCE_LAP', payload: { samples: refSamples } });
             }
+
+            // 4. Start Session
+            worker.postMessage({ 
+                type: 'START_SESSION', 
+                payload: { sessionId, trackName, trackType: 'Circuit', startGate, finishGate } 
+            });
+
+            // 5. Worker Message Routing
+            worker.onmessage = async (e: MessageEvent<any>) => {
+                const { type, payload } = e.data;
+
+                switch (type) {
+                    case 'UPDATE_STATS':
+                        // G-Force Coordinate Mapping (Inverted Y for "pull" effect)
+                        if (isCalibratedRef.current) {
+                            setGForce({
+                                x: (payload.currentG.x - calibratedRef.current.x) * 20,
+                                y: (payload.currentG.y - calibratedRef.current.y) * -20
+                            });
+                        } else {
+                            calibratedRef.current = { x: payload.currentG.x, y: payload.currentG.y };
+                        }
+                        setDelta(payload.delta || 0);
+                        break;
+
+                    case 'SAVE_BATCH':
+                        await db.samples.bulkAdd(payload);
+                        setSampleCount(prev => prev + payload.length);
+                        break;
+
+                    case 'STARTING_LAP':
+                        lapStartTimeRef.current = payload.startTime;
+                        break;
+
+                    case 'LAP_COMPLETED':
+                        setLastLapTime(payload.lapTime);
+                        lapStartTimeRef.current = Date.now();
+                        
+                        // Update Best Lap in Session
+                        if (!bestLapTime || payload.lapTime < bestLapTime) {
+                            setBestLapTime(payload.lapTime);
+                            await db.sessions.update(sessionId, { bestLapTime: payload.lapTime });
+                        }
+                        break;
+                }
+            };
         };
 
+        init();
+
+        // 6. Sensor Authorization Handling
         const explicitEvent = DeviceMotionEvent as unknown as DeviceMotionEventiOS;
         if (typeof explicitEvent.requestPermission === 'function') {
             setNeedsPermission(true);
@@ -231,145 +238,106 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
             window.addEventListener('devicemotion', handleMotion);
         }
 
+        // 7. GPS Stream
         const watchId = navigator.geolocation.watchPosition(
-            (position) => {
-                setPosLan(position.coords.latitude);
-                setPosLng(position.coords.longitude);
-                setAccuracy(position.coords.accuracy);
-                worker.postMessage({
+            (pos) => {
+                workerRef.current?.postMessage({
                     type: 'GPS_DATA',
                     payload: {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                        speed: position.coords.speed || 0,
-                        timestamp: position.timestamp
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude,
+                        speed: pos.coords.speed || 0,
+                        timestamp: pos.timestamp
                     }
                 });
-            }, error => {
-                console.error("Error GPS:", error);
-                if (error && error.code) {
-                    switch (error.code) {
-                        case error.PERMISSION_DENIED:
-                            console.error("Geolocation error: User denied the request for Geolocation.");
-                            setGpsError("Geolocation error: User denied the request for Geolocation.");
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            console.error("Geolocation error: Location information is unavailable.");
-                            setGpsError("Geolocation error: Location information is unavailable.");
-                            break;
-                        case error.TIMEOUT:
-                            console.error("Geolocation error: The request to get user location timed out.");
-                            setGpsError("Geolocation error: The request to get user location timed out.");
-                            break;
-                    }
-                    if (error.message) {
-                        console.error("Geolocation error message:", error.message);
-                    }
-                }
-            }, {
-                enableHighAccuracy: true,
-                maximumAge: 0,
-                timeout: 5000
-            }
+            },
+            () => {},
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
         );
 
         return () => {
             navigator.geolocation.clearWatch(watchId);
             window.removeEventListener('devicemotion', handleMotion);
-            worker.terminate();
-            handleEndPress();
+            cancelAnimationFrame(requestRef.current);
+            workerRef.current?.terminate();
         };
-    }, [handleMotion]);
+    }, [handleMotion, trackName]);
+
+    // --- UI INTERACTION ---
+
+    const handleExitPressStart = () => {
+        setIsPressing(true);
+        timerRef.current = setTimeout(onCloseOnboardPage, 2500);
+    };
+
+    const handleExitPressEnd = () => {
+        setIsPressing(false);
+        if (timerRef.current) clearTimeout(timerRef.current);
+    };
 
     return (
         <div 
-            className='w-screen h-screen absolute bg-bg-1 z-40 cursor-pointer select-none transition-opacity duration-3000 ease-linear' 
-            style={{opacity: isPressing ? 0 : 1}}
-            onMouseDown={handleStartPress}
-            onMouseUp={handleEndPress}
-            onMouseLeave={handleEndPress}
-            onTouchStart={handleStartPress}
-            onTouchEnd={handleEndPress}
+            className="w-screen h-screen absolute bg-bg-1 z-40 cursor-pointer select-none transition-opacity duration-1000" 
+            style={{ opacity: isPressing ? 0.3 : 1 }}
+            onMouseDown={handleExitPressStart}
+            onMouseUp={handleExitPressEnd}
+            onTouchStart={handleExitPressStart}
+            onTouchEnd={handleExitPressEnd}
         >
-
-            {/* PERMISSION MODAL */}
-            { needsPermission && (
-                <div className="w-full h-full fixed flex items-center justify-center z-30 bg-bg-1">
-                    <button className="px-8 py-4 border border-text-1 text-text-1 font-mono font-bold uppercase tracking-widest hover:bg-bg-hover-1 active:bg-bg-active-1"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            requestPermission();
-                        }}
-                    >
+            {/* OVERLAYS */}
+            {needsPermission && (
+                <div className="fixed inset-0 flex items-center justify-center z-50 bg-bg-1">
+                    <button onClick={requestPermission} className="px-8 py-4 border border-border-1 text-text-1 font-mono uppercase tracking-widest">
                         Enable Sensors
                     </button>
                 </div>
             )}
 
-            {/* CALIBRATE SENSORS MODAL */}
-            { !calibrateState && (
-                <div className="w-full h-full fixed flex items-center justify-center z-20 bg-bg-1">
-                    <button className="px-8 py-4 border border-text-1 text-text-1 font-mono font-bold uppercase tracking-widest hover:bg-bg-hover-1 active:bg-bg-active-1"
-                        onClick={() => {
-                            setCalibrateState(true);
-                            isCalibratedRef.current = true;
-                        }}
+            {!calibrateState && (
+                <div className="fixed inset-0 flex items-center justify-center z-40 bg-bg-1">
+                    <button 
+                        onClick={() => { setCalibrateState(true); isCalibratedRef.current = true; }} 
+                        className="px-8 py-4 border border-border-1 text-text-1 font-mono uppercase tracking-widest"
                     >
-                        Calibrate sensors
+                        Calibrate Bias
                     </button>
                 </div>
             )}
 
-            <div className="w-full h-22 bg-red-500 flex flex-row items-center justify-center">
-                <span className="text-[50px] font-bold font-mono tracking-widest uppercase text-text-1">
-                    +0.753
-                </span>
-            </div>
+            <DeltaBar delta={delta} />
             
-            <div className="w-full flex-1">
-                <div className="w-full h-[50%] flex flex-col items-start justify-start p-p-s">
-                    <TimerLabel label={"LIVE"}/>
-                    <Timer value={formatMs(liveLapMs).total}/>
-                    <TimerLabel label={"LAST LAP"}/>
-                    <Timer value={formatMs(lastLapTime).total}/>
-                    <TimerLabel label={"BEST LAP"}/>
-                    <Timer value={"00:00:000"}/>
+            <div className="w-full flex-1 flex flex-col p-p-md overflow-hidden">
+                {/* TIMERS */}
+                <div className="flex flex-col flex-1 gap-4">
+                    <div className="flex flex-col">
+                        <TimerLabel label="Live" />
+                        <Timer value={formatMs(liveLapMs)} />
+                    </div>
+                    <div className="flex flex-col opacity-60">
+                        <TimerLabel label="Last Lap" />
+                        <Timer value={formatMs(lastLapTime)} />
+                    </div>
+                    <div className="flex flex-col text-text-2">
+                        <TimerLabel label="Best Lap" />
+                        <Timer value={formatMs(bestLapTime)} />
+                    </div>
                 </div>
 
-                { showDebug && (
-                    <div className="w-full h-full flex flex-col items-center justify-center z-10 bg-bg-1/70">
-                        <span className="text-text-1">G-Force:</span>
-                        <span className="text-text-1">{gForce.x}</span>
-                        <span className="text-text-1">{gForce.y}</span>
-                        <br></br>
-                        <span className="text-text-1">Position:</span>
-                        <span className="text-text-1">{posLan}</span>
-                        <span className="text-text-1">{posLng}</span>
-                        <span className="text-text-1">{accuracy}</span>
-                        <br></br>
-                        <span className="text-text-1">Error:</span>
-                        <span className="text-text-1">{gpsError}</span>
-                        <br></br>
-                        <span className="text-text-1">Samples:</span>
-                        <span className="text-text-1">{sampleCount}</span>
-                        <br></br>
-                    </div>
-                )}
-
-                <div className="w-full h-[30%] flex items-center justify-center">
-                    <div className="relative w-64 h-64 flex items-center justify-center pointer-events-none">
-                        <div className="absolute w-full h border border-neutral-700"></div>
-                        <div className="absolute h-full w border border-neutral-700"></div>
-                        <div className="absolute w-32 h-32 border border-neutral-400 rounded-full"></div>
-                        <div className="absolute w-64 h-64 border border-neutral-400 rounded-full"></div>
-                        <span className="absolute top-0 text-[10px] text-text-1 font-mono">LONG</span>
-                        <span className="absolute right-0 text-[10px] text-text-1 font-mono">LAT</span>
+                {/* G-METER VISUALIZER */}
+                <div className="w-full h-[35%] flex items-center justify-center relative">
+                    <div className="relative w-56 h-56 flex items-center justify-center">
+                        <div className="absolute w-full h-px bg-neutral-800" />
+                        <div className="absolute h-full w-px bg-neutral-800" />
+                        <div className="absolute w-32 h-32 border border-neutral-700 rounded-full" />
+                        <div className="absolute w-full h-full border border-neutral-600 rounded-full" />
+                        
                         <div 
-                            className="w-6 h-6 bg-ball rounded-full shadow-[0_0_25px_rgba(255,255,255,0.8)] z-10 transition-transform duration-75 ease-out"
-                            style={{ 
-                                transform: `translate(${gForce.x}px, ${gForce.y}px)` 
-                            }}
-                        ></div>
+                            className="w-6 h-6 bg-white rounded-full shadow-[0_0_20px_white] transition-transform duration-75 ease-out z-10"
+                            style={{ transform: `translate(${gForce.x}px, ${gForce.y}px)` }}
+                        />
+                    </div>
+                    <div className="absolute bottom-0 right-0 p-2 font-mono text-[10px] opacity-30">
+                        Samples: {sampleCount}
                     </div>
                 </div>
             </div>

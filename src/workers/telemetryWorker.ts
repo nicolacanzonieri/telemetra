@@ -1,47 +1,62 @@
 import type { Gate } from "../db/database";
 
-// --- STATE VARIABLES ---
-let isRunning = false;
+/**
+ * TELEMETRY WORKER (CODENAME: VELO)
+ * Responsibilities:
+ * 1. Sensor Fusion (Kalman Filter) for stable Velocity/Position.
+ * 2. Gate Crossing detection via line-segment intersection.
+ * 3. High-frequency Delta-time calculation against Reference Lap.
+ * 4. Data buffering and batch-dispatching to IndexedDB.
+ */
 
-// Session related 
+// --- CONFIGURATION ---
+const ACCEL_NOISE = 0.5;        // Process noise for Kalman Filter
+const GPS_NOISE = 2.0;          // Measurement noise for Kalman Filter
+const ACCEL_SMOOTHING = 0.15;   // Low-pass filter for G-ball visualization
+const VELOCITY_DEADZONE = 0.05; // M/S threshold to ignore stationary sensor drift
+const BATCH_SIZE = 50;          // Samples to buffer before sending to UI/DB
+
+// --- SESSION STATE ---
+let isRunning = false;
+let currentSessionId: number | null = null;
 let startGate: { p1: [number, number], p2: [number, number] } | null = null;
 let finishGate: { p1: [number, number], p2: [number, number] } | null = null;
-let lastPosition: [number, number] | null = null;
-let lastTimestamp: number | null = null;
-let sessionStartTime: number | null = null;
 
-// Database related
-let sampleBuffer: any[] = [];
-const BATCH_SIZE = 5; 
-let currentSessionId: number | null = null;
-
-// --- KALMAN & FILTER CONFIG ---
-const ACCEL_SMOOTHING = 0.15;   // Low-pass filter alpha. Lower = smoother G-ball.
-const GPS_TRUST_FACTOR = 0.2;    // Fusion weight. How much we trust GPS vs Accelerometer.
-const VELOCITY_DEADZONE = 0.05; // Ignore tiny accelerations to prevent stationary drift.
-
-// --- FILTERED STATE ---
-let filteredGx = 0;
-let filteredGy = 0;
-let filteredSpeed = 0;      // Internally stored in m/s
-let distanceTraveled = 0;   // Meters since start of current lap
+// --- KALMAN FILTER & MOTION STATE ---
+let velocity = 0;               // m/s (Fused state)
+let variance = 1;               // Uncertainty tracker
+let filteredGx = 0;             // Smoothed Lateral G
+let filteredGy = 0;             // Smoothed Longitudinal G
+let distanceTraveled = 0;       // Meters since current lap start
 let lastAccelTimestamp: number | null = null;
-let isVelocityInitialized = false;
+let lastGpsPosition: [number, number] | null = null;
+let lastGpsTimestamp: number | null = null;
 
+// --- LAP TIMING & DELTA STATE ---
+let lapStartTime: number | null = null;
+let referenceLap: { distance: number; time: number }[] = []; 
+let lastRefIndex = 0;           // Optimized pointer for Delta calculation
+
+// --- PERSISTENCE BUFFER ---
+let sampleBuffer: any[] = [];
+
+// --- TYPE DEFINITIONS ---
 export type WorkerMessage =
   | { type: 'START_SESSION'; payload: { sessionId: number; trackName: string, trackType: 'Circuit' | 'Sprint'; startGate: Gate | null; finishGate: Gate | null } }
   | { type: 'STOP_SESSION' }
   | { type: 'SENSOR_DATA'; payload: { accel: DeviceMotionEventAcceleration; timestamp: number } }
-  | { type: 'GPS_DATA'; payload: { lat: number; lng: number; speed: number; timestamp: number } };
+  | { type: 'GPS_DATA'; payload: { lat: number; lng: number; speed: number; timestamp: number } }
+  | { type: 'SET_REFERENCE_LAP'; payload: { samples: { distance: number; time: number }[] }};
 
 export type WorkerResponse =
-  | { type: 'UPDATE_STATS'; payload: { currentG: { x: number, y: number }, speed: number, distance: number } }
+  | { type: 'UPDATE_STATS'; payload: { currentG: { x: number, y: number }, speed: number, distance: number, delta: number } }
   | { type: 'STARTING_LAP'; payload: { startTime: number } }
   | { type: 'LAP_COMPLETED'; payload: { lapTime: number } }
   | { type: 'SAVE_BATCH'; payload: any[] };
 
 /**
- * Line-segment intersection math to detect gate crossing.
+ * Calculates if two line segments intersect.
+ * Used for detecting if the vehicle crossed the start/finish gate.
  */
 function getIntersection(
   ax: number, ay: number, bx: number, by: number,
@@ -53,16 +68,14 @@ function getIntersection(
   const t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / det;
   const u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / det;
 
-  if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
-    return t;
-  }
-  return null;
+  return (t >= 0 && t <= 1 && u >= 0 && u <= 1) ? t : null;
 }
 
-function addToBuffer(sample: any) {
+/**
+ * Buffers telemetry samples and dispatches them to the main thread in batches.
+ */
+function bufferSample(sample: any) {
   if (!currentSessionId) return;
-  
-  console.log("SAMPLE: ", sample);
 
   sampleBuffer.push({
     ...sample,
@@ -71,154 +84,147 @@ function addToBuffer(sample: any) {
   });
 
   if (sampleBuffer.length >= BATCH_SIZE) {
-    flushBuffer();
+    self.postMessage({ type: 'SAVE_BATCH', payload: [...sampleBuffer] });
+    sampleBuffer = [];
   }
 }
 
-function flushBuffer() {
-  if (sampleBuffer.length === 0) return;
-  
-  const count = sampleBuffer.length;
-  console.log(`WORKER: SENDING BATCH OF ${count} SAMPLES TO UI...`);
-  
-  self.postMessage({
-    type: 'SAVE_BATCH',
-    payload: [...sampleBuffer]
-  });
-  
-  sampleBuffer = [];
-}
-
+/**
+ * Main Message Handler
+ */
 self.onmessage = (e: MessageEvent<WorkerMessage>) => {
   const message = e.data;
 
   switch (message.type) {
     case 'START_SESSION':
-      currentSessionId = message.payload.sessionId;
-      sampleBuffer = [];
-      isRunning = true;
-      distanceTraveled = 0;
-      filteredSpeed = 0;
-      isVelocityInitialized = false;
-      
-      if (message.payload.startGate) {
-        startGate = {
-          p1: [message.payload.startGate.p1.lat, message.payload.startGate.p1.lng],
-          p2: [message.payload.startGate.p2.lat, message.payload.startGate.p2.lng]
-        };
-      }
-      if (message.payload.finishGate) {
-        finishGate = {
+        currentSessionId = message.payload.sessionId;
+        isRunning = true;
+        velocity = 0;
+        variance = 1;
+        distanceTraveled = 0;
+        lastRefIndex = 0;
+        lapStartTime = null;
+        
+        // Define Gates
+        if (message.payload.startGate) {
+          startGate = {
+            p1: [message.payload.startGate.p1.lat, message.payload.startGate.p1.lng],
+            p2: [message.payload.startGate.p2.lat, message.payload.startGate.p2.lng]
+          };
+        }
+        finishGate = message.payload.finishGate ? {
           p1: [message.payload.finishGate.p1.lat, message.payload.finishGate.p1.lng],
           p2: [message.payload.finishGate.p2.lat, message.payload.finishGate.p2.lng]
-        };
-      } else {
-        finishGate = startGate;
-      }
-      sessionStartTime = null;
-      break;
+        } : startGate;
+        break;
 
     case 'STOP_SESSION':
-      isRunning = false;
-      flushBuffer();
-      console.log("WORKER: SESSION STOPPED");
-      break;
+        isRunning = false;
+        if (sampleBuffer.length > 0) {
+            self.postMessage({ type: 'SAVE_BATCH', payload: [...sampleBuffer] });
+        }
+        sampleBuffer = [];
+        break;
+
+    case 'SET_REFERENCE_LAP':
+        // Sort reference points by distance to ensure the search pointer logic works
+        referenceLap = message.payload.samples.sort((a, b) => a.distance - b.distance);
+        lastRefIndex = 0;
+        break;
 
     case 'SENSOR_DATA':
-      if (!isRunning) return;
+        if (!isRunning) return;
+        const { accel, timestamp } = message.payload;
+        const dtA = lastAccelTimestamp ? (timestamp - lastAccelTimestamp) / 1000 : 0;
+        lastAccelTimestamp = timestamp;
 
-      const { accel, timestamp } = message.payload;
+        // 1. G-Force Low Pass Filter (for UI Visualization)
+        filteredGx = (accel.x || 0) * ACCEL_SMOOTHING + filteredGx * (1 - ACCEL_SMOOTHING);
+        filteredGy = (accel.y || 0) * ACCEL_SMOOTHING + filteredGy * (1 - ACCEL_SMOOTHING);
 
-      // Prediction phase
-      // Low-Pass Filter (EMA) for G-Force visualization
-      filteredGx = (accel.x || 0) * ACCEL_SMOOTHING + filteredGx * (1 - ACCEL_SMOOTHING);
-      filteredGy = (accel.y || 0) * ACCEL_SMOOTHING + filteredGy * (1 - ACCEL_SMOOTHING);
+        // 2. Kalman Filter: Prediction Phase
+        if (dtA > 0 && dtA < 0.2) {
+            let accelMS2 = (accel.y || 0) * 9.81; // Using Y as Longitudinal (calibration dependent)
+            if (Math.abs(accelMS2) < VELOCITY_DEADZONE) accelMS2 = 0;
 
-      // Inertial Integration for Speed
-      const dt = lastAccelTimestamp ? (timestamp - lastAccelTimestamp) / 1000 : 0;
-      lastAccelTimestamp = timestamp;
-
-      if (dt > 0 && dt < 0.2) {
-        // Convert longitudinal Gs to m/s^2. 
-        // Note: Gy direction depends on device orientation calibration.
-        let accelMS2 = filteredGy * 9.81;
-
-        // Apply deadzone to mitigate sensor noise while stationary
-        if (Math.abs(accelMS2) < VELOCITY_DEADZONE) accelMS2 = 0;
-
-        // Update velocity (v = v0 + a*dt)
-        filteredSpeed += accelMS2 * dt;
-        if (filteredSpeed < 0) filteredSpeed = 0;
-
-        // Distance tracking (meters traveled since lap start)
-        distanceTraveled += filteredSpeed * dt;
-      }
-
-      self.postMessage({
-        type: 'UPDATE_STATS',
-        payload: {
-          currentG: { x: filteredGx, y: filteredGy },
-          speed: filteredSpeed * 3.6, // Convert to km/h for possible future UI layouts
-          distance: distanceTraveled
+            velocity += accelMS2 * dtA;
+            if (velocity < 0) velocity = 0;
+            
+            distanceTraveled += velocity * dtA;
+            variance += dtA * ACCEL_NOISE;
         }
-      });
-      break;
+
+        // 3. High-Frequency Delta Calculation (O(1) amortized search)
+        let currentDelta = 0;
+        if (referenceLap.length > 0 && lapStartTime !== null) {
+            const timeSinceLapStart = timestamp - lapStartTime;
+            
+            // Advance the reference pointer based on current distance
+            while (lastRefIndex < referenceLap.length - 1 && referenceLap[lastRefIndex].distance < distanceTraveled) {
+                lastRefIndex++;
+            }
+            
+            const refPoint = referenceLap[lastRefIndex];
+            currentDelta = (timeSinceLapStart - refPoint.time) / 1000;
+        }
+
+        self.postMessage({
+            type: 'UPDATE_STATS',
+            payload: {
+                currentG: { x: filteredGx, y: filteredGy },
+                speed: velocity * 3.6,
+                distance: distanceTraveled,
+                delta: currentDelta
+            }
+        });
+        break;
 
     case 'GPS_DATA':
-      if (!isRunning || !finishGate) return;
+        if (!isRunning || !finishGate) return;
+        const { lat, lng, speed: gpsSpeedMS, timestamp: gpsTimestamp } = message.payload;
+        const currentPos: [number, number] = [lat, lng];
+        
+        // 1. Kalman Filter: Correction Phase
+        const kalmanGain = variance / (variance + GPS_NOISE);
+        velocity = velocity + kalmanGain * (gpsSpeedMS - velocity);
+        variance = (1 - kalmanGain) * variance;
 
-      const { lat, lng, speed: gpsSpeedMS, timestamp: gpsTimestamp } = message.payload;
-      const currentPos: [number, number] = [lat, lng];
+        // 2. Gate Crossing Logic
+        if (lastGpsPosition && lastGpsTimestamp) {
+            const intersectT = getIntersection(
+                lastGpsPosition[0], lastGpsPosition[1], currentPos[0], currentPos[1],
+                finishGate.p1[0], finishGate.p1[1], finishGate.p2[0], finishGate.p2[1]
+            );
 
-      // Sensor Fusion (Correction Phase)
-      // Correct the inertial speed drift using absolute GPS data
-      if (!isVelocityInitialized) {
-        filteredSpeed = gpsSpeedMS;
-        isVelocityInitialized = true;
-      } else {
-        // Blend Accelerometer speed and GPS speed
-        filteredSpeed = (filteredSpeed * (1 - GPS_TRUST_FACTOR)) + (gpsSpeedMS * GPS_TRUST_FACTOR);
-      }
+            if (intersectT !== null) {
+                // Precise crossing time calculation via interpolation
+                const exactTime = lastGpsTimestamp + (gpsTimestamp - lastGpsTimestamp) * intersectT;
 
-      // Hard stop speed drift if GPS reports zero movement
-      if (gpsSpeedMS < 0.2 && filteredSpeed < 0.4) {
-          filteredSpeed = 0;
-      }
-
-      // Gate Crossing Logic
-      if (lastPosition) {
-        const intersectT = getIntersection(
-          lastPosition[0], lastPosition[1], currentPos[0], currentPos[1],
-          finishGate.p1[0], finishGate.p1[1], finishGate.p2[0], finishGate.p2[1]
-        );
-
-        if (intersectT !== null) {
-          console.log("WORKER: FINISH LINE CROSSED");
-          const exactTime = lastTimestamp! + (gpsTimestamp - lastTimestamp!) * intersectT;
-
-          if (sessionStartTime === null) {
-            sessionStartTime = exactTime;
-            distanceTraveled = 0; // Reset distance on start line
-            self.postMessage({ type: 'STARTING_LAP', payload: { startTime: exactTime } });
-          } else {
-            const lapTimeMs = exactTime - sessionStartTime;
-            sessionStartTime = exactTime;
-            distanceTraveled = 0; // Reset distance for new lap
-            self.postMessage({ type: 'LAP_COMPLETED', payload: { lapTime: lapTimeMs } });
-          }
+                if (lapStartTime === null) {
+                    lapStartTime = exactTime;
+                    distanceTraveled = 0;
+                    lastRefIndex = 0;
+                    self.postMessage({ type: 'STARTING_LAP', payload: { startTime: exactTime } });
+                } else {
+                    const lapTimeMs = exactTime - lapStartTime;
+                    lapStartTime = exactTime;
+                    distanceTraveled = 0;
+                    lastRefIndex = 0;
+                    self.postMessage({ type: 'LAP_COMPLETED', payload: { lapTime: lapTimeMs } });
+                }
+            }
         }
-      }
 
-      addToBuffer({
-        timestamp: gpsTimestamp,
-        lat: lat,
-        lng: lng,
-        speed: filteredSpeed,
-      });
-      console.log(`WORKER: BUFFER SIZE ${sampleBuffer.length}`);
+        // 3. Persistent Storage
+        bufferSample({
+            timestamp: gpsTimestamp,
+            lat,
+            lng,
+            speed: velocity,
+        });
 
-      lastPosition = currentPos;
-      lastTimestamp = gpsTimestamp;
-      break;
+        lastGpsPosition = currentPos;
+        lastGpsTimestamp = gpsTimestamp;
+        break;
   }
 };

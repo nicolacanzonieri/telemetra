@@ -32,6 +32,7 @@ export interface Sample {
     gLong: number;
     delta: number;
     speed: number;
+    distance: number;
 }
 
 export class TelemetraDB extends Dexie {
