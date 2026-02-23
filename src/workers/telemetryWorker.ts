@@ -14,7 +14,7 @@ const ACCEL_NOISE = 0.5;        // Process noise for Kalman Filter
 const GPS_NOISE = 2.0;          // Measurement noise for Kalman Filter
 const ACCEL_SMOOTHING = 0.15;   // Low-pass filter for G-ball visualization
 const VELOCITY_DEADZONE = 0.05; // M/S threshold to ignore stationary sensor drift
-const BATCH_SIZE = 5;           // Samples to buffer before sending to UI/DB (RIDOTTO PER SICUREZZA)
+const BATCH_SIZE = 10;           // Samples to buffer before sending to UI/DB (RIDOTTO PER SICUREZZA)
 
 // --- SESSION STATE ---
 let isRunning = false;
