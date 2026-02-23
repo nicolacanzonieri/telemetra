@@ -41,8 +41,35 @@ export default function SettingsPage({onCloseSettings}: SettingsPageProps) {
     // Theme hook
     const { theme, toggleTheme } = useTheme();
 
+    // Update telemetra
+    const handleUpdateTelemetra = async () => {
+        if ('serviceWorker' in navigator) {
+            try {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (const registration of registrations) {
+                    // Check the server for updates
+                    await registration.update();
+                    console.log("Checking for updates on Vercel...");
+                }
+                
+                // Force a reload to activate the new version
+                // The 'true' parameter (though deprecated) tells some browsers to skip cache
+                window.location.reload();
+            } catch (error) {
+                console.error("Update failed:", error);
+                window.location.reload();
+            }
+        } else {
+            window.location.reload();
+        }
+    };
+
     // Delete all data and update
     const handleHardReset = async () => {
+        if (!confirm("WARNING: This will permanently delete all sessions and saved times. Do you want to proceed?")) {
+            return;
+        }
+
         try {
             if ('serviceWorker' in navigator) {
                 const registrations = await navigator.serviceWorker.getRegistrations();
@@ -99,7 +126,7 @@ export default function SettingsPage({onCloseSettings}: SettingsPageProps) {
                 <SettingsButton 
                     type="action" 
                     label={"Update Telemetra"} 
-                    onClick={() => window.location.reload()}
+                    onClick={handleUpdateTelemetra}
                 />
                 <SettingsButton 
                     type="action" 
