@@ -7,27 +7,84 @@ interface DataViewerPageProps {
 }
 
 interface SessionButtonProps {
-    sessionId: string;
+    sessionId: number;
     trackName: string;
+    date: number;
+    onExport: (id: number, tName: string) => void;
 }
 
-function SessionButton({sessionId, trackName}: SessionButtonProps) {
+function SessionButton({sessionId, trackName, date, onExport}: SessionButtonProps) {
+    const dateStr = new Date(date).toLocaleString();
+
     return (
-        <button className="w-80 h-20 flex flex-col items-center justify-center shrink-0 mb-5 p-p-md border border-border-1 hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1">
-            <span className="text-sm font-mono tracking-widest uppercase text-text-1">
-                {trackName}
-            </span>
-            <span className="text-xs font-mono tracking-widest uppercase text-text-2">
-                {sessionId}
-            </span>
-        </button>
+        <div className="w-80 h-24 shrink-0 mb-5 p-p-md border border-border-1 flex flex-col items-center justify-center hover:bg-bg-hover-1 active:border-border-hover-1 active:bg-bg-active-1 relative group">
+            <button onClick={() => onExport(sessionId, trackName)} className="w-full h-full flex flex-col items-center justify-center">
+                <span className="text-sm font-mono tracking-widest uppercase text-text-1">
+                    {trackName}
+                </span>
+                <span className="text-xs font-mono tracking-widest uppercase text-text-2 mt-1">
+                    {dateStr}
+                </span>
+                <span className="text-[10px] font-mono uppercase text-text-1 opacity-50 mt-1">
+                    ID: {sessionId}
+                </span>
+            </button>
+            
+            {/* Visual download indicator */}
+            <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-icon-1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            </div>
+        </div>
     );
 }
 
 export default function DataViewerPage({onCloseDataViewerPage}: DataViewerPageProps) {
     const sessions = useLiveQuery(
-        () => db.sessions.orderBy('date').toArray()
+        () => db.sessions.orderBy('date').reverse().toArray() // Ordine decrescente (più recenti in alto)
     );
+
+    const handleExportSession = async (sessionId: number, trackName: string) => {
+        try {
+            // Recover the specific session
+            const sessionData = await db.sessions.get(sessionId);
+            if (!sessionData) {
+                alert("Errore: Sessione non trovata");
+                return;
+            }
+
+            // Retrieve the associated track (to get the coordinates of the gates)
+            // Note: If multiple tracks with the same name exist, it takes the first one found.
+            // Ideally, in the future, you should link session -> trackId instead of trackName.
+            const trackData = await db.tracks.where('name').equals(trackName).first();
+
+            // Recover all laps from the selected session
+            const lapsData = await db.laps.where('sessionId').equals(sessionId).toArray();
+
+            // Recover all the samples of the selected session
+            const samplesData = await db.samples.where('sessionId').equals(sessionId).toArray();
+
+            const exportObject = {
+                laps: lapsData,
+                samples: samplesData,
+                sessions: [sessionData],
+                tracks: trackData ? [trackData] : []
+            };
+
+            const blob = new Blob([JSON.stringify(exportObject, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `telemetra_dump_${trackName}_${sessionId}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+        } catch (e) {
+            console.error("Export failed:", e);
+            alert("Errore durante l'export dei dati.");
+        }
+    };
     
     return (
         <div className='w-screen h-screen absolute flex flex-col z-10 overflow-hidden bg-bg-1'>
@@ -41,16 +98,24 @@ export default function DataViewerPage({onCloseDataViewerPage}: DataViewerPagePr
                 <span className="mb-10 text-text-1 text-4xl font-mono tracking-widest uppercase">
                     Data Viewer
                 </span>
+                <span className="text-xs font-mono uppercase text-text-2 mb-4">
+                    Tap to export JSON
+                </span>
 
-                {/* Saved tracks */}
-                    <div className="w-full min-h-0 overflow-y-auto flex flex-col flex-1 items-center justify-start no-scrollbar">
-                        {/* {savedTracks?.map((track) => (
-                            <SessionButton trackName="Monza" sessionId="198291028329"/>
-                        ))} */}
-                        { sessions?.map((session) => (
-                            <SessionButton trackName={session.trackName} sessionId={session.id ? session.id.toString() : "no id"}/>
-                        )) }
-                    </div>
+                <div className="w-full min-h-0 overflow-y-auto flex flex-col flex-1 items-center justify-start no-scrollbar pb-10">
+                    { sessions?.map((session) => (
+                        <SessionButton 
+                            key={session.id} 
+                            sessionId={session.id!} 
+                            trackName={session.trackName} 
+                            date={session.date}
+                            onExport={handleExportSession}
+                        />
+                    )) }
+                    {(!sessions || sessions.length === 0) && (
+                        <span className="text-text-1 font-mono opacity-50">NO SESSIONS FOUND</span>
+                    )}
+                </div>
             </div>
         </div>
     );
