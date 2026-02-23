@@ -94,6 +94,7 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
     const lapCounter = useRef(1); 
     const sessionId = useRef(Date.now()).current;
     const bestLapTimeRef = useRef<number>(0); 
+    const wakeLockRef = useRef<any>(null);
 
     // --- LOGIC: DATA PREPARATION ---
 
@@ -182,6 +183,47 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
             }
         }
     };
+
+    useEffect(() => {
+        const requestWakeLock = async () => {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLockRef.current = await navigator.wakeLock.request('screen');
+                    console.log('Screen Wake Lock attivato: lo schermo non si spegnerà.');
+                    
+                    // Se il wake lock viene rilasciato dal sistema (es. batteria scarica), gestiamolo
+                    wakeLockRef.current.addEventListener('release', () => {
+                        console.log('Screen Wake Lock rilasciato dal sistema.');
+                    });
+                } catch (err) {
+                    console.error('Impossibile attivare lo Screen Wake Lock:', err);
+                }
+            } else {
+                console.warn('Screen Wake Lock API non supportata da questo browser.');
+            }
+        };
+
+        requestWakeLock();
+
+        const handleVisibilityChange = async () => {
+            if (wakeLockRef.current !== null && document.visibilityState === 'visible') {
+                await requestWakeLock();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            if (wakeLockRef.current !== null) {
+                wakeLockRef.current.release()
+                    .then(() => {
+                        wakeLockRef.current = null;
+                        console.log('Screen Wake Lock disattivato manualmente.');
+                    })
+                    .catch(console.error);
+            }
+        };
+    }, []);
 
     // --- LIFECYCLE: WORKER & SESSION INITIALIZATION ---
 
