@@ -1,7 +1,3 @@
-This is a revised, professional **README.md** for **Telemetra**, incorporating the technical depth found in your source code and the empirical data from your recent testing session.
-
----
-
 # 🏎️ Telemetra
 
 **Telemetra** is a high-performance, sensor-fusion Progressive Web App (PWA) designed for motorsports enthusiasts. It transforms a standard smartphone into a professional-grade telemetry deck, leveraging advanced signal processing to provide real-time lap timing, G-load analysis, and performance delta tracking without the need for external hardware.
