@@ -288,13 +288,13 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
         }
       }
 
-      // 3. Persistent Storage (Added rawSpeed for post-analysis)
+      // 3. Persistent Storage
       bufferSample({
         timestamp: gpsTimestamp,
         lat,
         lng,
         speed: velocity, // Filtered Speed
-        rawSpeed: gpsSpeedMS, // Raw GPS Speed (New!)
+        rawSpeed: gpsSpeedMS, // Raw GPS Speed
         gLat: filteredGx,
         gLong: filteredGy
       });
