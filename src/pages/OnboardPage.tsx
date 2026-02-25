@@ -102,34 +102,38 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
      * Searches for the best lap in history for this track to provide Delta comparison.
      */
     const prepareReferenceLap = async (tName: string) => {
-        // Get the best session for the selected track
-        const bestSession = await db.sessions
-            .where('trackName').equals(tName)
+        // Find all sessions in the selected track
+        const sessions = await db.sessions
+            .where('trackName').equals(tName.toUpperCase())
             .filter(s => s.bestLapTime !== null && s.bestLapTime > 0)
-            .sortBy('bestLapTime');
+            .toArray();
 
-        if (bestSession.length === 0) return null;
-        const session = bestSession[0];
+        if (sessions.length === 0) return null;
+
+        // Get the best session from all the sessions
+        const bestSession = sessions.sort((a, b) => (a.bestLapTime || Infinity) - (b.bestLapTime || Infinity))[0];
         
-        // Get the best time from the best session
-        const sessionBestTime = session.bestLapTime || 0;
-        setBestLapTime(sessionBestTime);
-        bestLapTimeRef.current = sessionBestTime; // Sync ref
+        // Get the best lap time
+        setBestLapTime(bestSession.bestLapTime || 0);
+        bestLapTimeRef.current = bestSession.bestLapTime || 0;
 
         const bestLapRecord = await db.laps
-            .where({ sessionId: session.id, isBest: true })
+            .where({ sessionId: bestSession.id, isBest: true })
             .first();
 
         if (!bestLapRecord) return null;
 
-        // Get the samples from the the best session
-        const allSamples = await db.samples.where('sessionId').equals(session.id!).toArray();
+        // Get the samples from the best lap
+        const allSamples = await db.samples
+            .where('sessionId').equals(bestSession.id!)
+            .sortBy('timestamp');
+
         if (allSamples.length === 0) return null;
 
         const targetLapSamples = [];
         let currentLapIdx = 1;
         
-        // Get only the samples for the best lap
+        // Filter the samples to get only the ones of the best lap
         for (let i = 1; i < allSamples.length; i++) {
             const prev = allSamples[i-1];
             const curr = allSamples[i];
@@ -145,7 +149,6 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
 
         if (targetLapSamples.length === 0) return null;
 
-        // Get the starting sample from the samples of the best lap
         const startT = targetLapSamples[0].timestamp;
         return targetLapSamples.map(s => ({
             distance: s.distance,
@@ -310,14 +313,16 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
                             await db.sessions.update(sessionId, { bestLapTime: time });
 
                             // Call prepareReferenceLap to extract data from the new best lap time (FIX for Issue #3)
-                            const updatedRefSamples = await prepareReferenceLap(trackName);
-                            if (updatedRefSamples && updatedRefSamples.length > 0) {
-                                workerRef.current?.postMessage({ 
-                                    type: 'SET_REFERENCE_LAP', 
-                                    payload: { samples: updatedRefSamples } 
-                                });
-                                console.log("Reference Lap updated mid-session!");
-                            }
+                            setTimeout(async () => {
+                                const updatedRefSamples = await prepareReferenceLap(trackName);
+                                if (updatedRefSamples && updatedRefSamples.length > 0) {
+                                    workerRef.current?.postMessage({ 
+                                        type: 'SET_REFERENCE_LAP', 
+                                        payload: { samples: updatedRefSamples } 
+                                    });
+                                    console.log("Delta Bar pronta per il prossimo giro!");
+                                }
+                            }, 1000);
                         }
                         break;
                 }
