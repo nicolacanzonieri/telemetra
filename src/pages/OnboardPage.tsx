@@ -102,14 +102,16 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
      * Searches for the best lap in history for this track to provide Delta comparison.
      */
     const prepareReferenceLap = async (tName: string) => {
+        // Get the best session for the selected track
         const bestSession = await db.sessions
             .where('trackName').equals(tName)
-            .filter(s => s.bestLapTime !== null && s.bestLapTime > 0) // Ensure valid time
+            .filter(s => s.bestLapTime !== null && s.bestLapTime > 0)
             .sortBy('bestLapTime');
 
         if (bestSession.length === 0) return null;
         const session = bestSession[0];
         
+        // Get the best time from the best session
         const sessionBestTime = session.bestLapTime || 0;
         setBestLapTime(sessionBestTime);
         bestLapTimeRef.current = sessionBestTime; // Sync ref
@@ -120,12 +122,14 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
 
         if (!bestLapRecord) return null;
 
+        // Get the samples from the the best session
         const allSamples = await db.samples.where('sessionId').equals(session.id!).toArray();
         if (allSamples.length === 0) return null;
 
         const targetLapSamples = [];
         let currentLapIdx = 1;
         
+        // Get only the samples for the best lap
         for (let i = 1; i < allSamples.length; i++) {
             const prev = allSamples[i-1];
             const curr = allSamples[i];
@@ -141,6 +145,7 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
 
         if (targetLapSamples.length === 0) return null;
 
+        // Get the starting sample from the samples of the best lap
         const startT = targetLapSamples[0].timestamp;
         return targetLapSamples.map(s => ({
             distance: s.distance,
@@ -240,11 +245,11 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
                 bestLapTime: null 
             });
 
-            // 2. Spawn Telemetry Worker
+            // Spawn Telemetry Worker
             const worker = new TelemetryWorker();
             workerRef.current = worker;
 
-            // 3. Load Reference Data for Delta Bar
+            // Load Reference Data for Delta Bar
             const refSamples = await prepareReferenceLap(trackName);
             
             if (refSamples && refSamples.length > 0) {
@@ -254,13 +259,13 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
                 console.log("No Reference Lap found (First run or logic error)");
             }
 
-            // 4. Start Session
+            // Start Session
             worker.postMessage({ 
                 type: 'START_SESSION', 
                 payload: { sessionId, trackName, trackType: 'Circuit', startGate, finishGate } 
             });
 
-            // 5. Worker Message Routing
+            // Worker Message Routing
             worker.onmessage = async (e: MessageEvent<any>) => {
                 const { type, payload } = e.data;
 
@@ -301,8 +306,18 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
 
                         if (isNewBest) {
                             setBestLapTime(time);
-                            bestLapTimeRef.current = time; // Aggiorna il ref immediatamente
+                            bestLapTimeRef.current = time;
                             await db.sessions.update(sessionId, { bestLapTime: time });
+
+                            // Call prepareReferenceLap to extract data from the new best lap time (FIX for Issue #3)
+                            const updatedRefSamples = await prepareReferenceLap(trackName);
+                            if (updatedRefSamples && updatedRefSamples.length > 0) {
+                                workerRef.current?.postMessage({ 
+                                    type: 'SET_REFERENCE_LAP', 
+                                    payload: { samples: updatedRefSamples } 
+                                });
+                                console.log("Reference Lap updated mid-session!");
+                            }
                         }
                         break;
                 }
@@ -311,7 +326,7 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
 
         init();
 
-        // 6. Sensor Authorization Handling
+        // Sensor Authorization Handling
         const explicitEvent = DeviceMotionEvent as unknown as DeviceMotionEventiOS;
         if (typeof explicitEvent.requestPermission === 'function') {
             setNeedsPermission(true);
@@ -319,7 +334,7 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
             window.addEventListener('devicemotion', handleMotion);
         }
 
-        // 7. GPS Stream
+        // GPS Stream
         const watchId = navigator.geolocation.watchPosition(
             (pos) => {
                 workerRef.current?.postMessage({ 
@@ -333,16 +348,16 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
                 });
             },
             () => {},
-            { enableHighAccuracy: true, maximumAge: 0, timeout: 1000 } // FIX: Timeout ridotto per più reattività
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 1000 }
         );
 
         return () => {
             navigator.geolocation.clearWatch(watchId);
             window.removeEventListener('devicemotion', handleMotion);
             cancelAnimationFrame(requestRef.current);
-            workerRef.current?.terminate();
+            workerRef.current?.terminate
         };
-    }, [handleMotion, trackName]); // Dependencies
+    }, [handleMotion, trackName]);
 
     // --- UI INTERACTION ---
 
