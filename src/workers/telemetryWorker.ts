@@ -303,7 +303,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
         speed: velocity, // Filtered Speed
         rawSpeed: gpsSpeedMS, // Raw GPS Speed
         gLat: filteredGx,
-        gLong: filteredGy
+        gLong: filteredGy - accelBiasY,
       });
 
       // 4. Update State for Next Tick
