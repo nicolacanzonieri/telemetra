@@ -14,7 +14,7 @@ const ACCEL_NOISE = 0.5;        // Process noise for Kalman Filter
 const GPS_NOISE = 2.0;          // Measurement noise for Kalman Filter
 const ACCEL_SMOOTHING = 0.15;   // Low-pass filter for G-ball visualization
 const VELOCITY_DEADZONE = 0.05; // M/S threshold to ignore stationary sensor drift
-const BATCH_SIZE = 10;           // Samples to buffer before sending to UI/DB
+const BATCH_SIZE = 50;           // Samples to buffer before sending to UI/DB
 
 // --- SESSION STATE ---
 let isRunning = false;
@@ -273,6 +273,13 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
             self.postMessage({ type: 'STARTING_LAP', payload: { startTime: exactTime } });
           } else {
             const lapTimeMs = exactTime - lapStartTime;
+
+            // Force the buffer to empty at the finish line (FIX for Issue #3)
+            if (sampleBuffer.length > 0) {
+              self.postMessage({ type: 'SAVE_BATCH', payload: [...sampleBuffer] });
+              sampleBuffer = [];
+            }
+            
             self.postMessage({ type: 'LAP_COMPLETED', payload: { lapTime: lapTimeMs } });
 
             // If Sprint, stop the engine after finish line
