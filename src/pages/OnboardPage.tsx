@@ -306,8 +306,18 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
 
                         if (isNewBest) {
                             setBestLapTime(time);
-                            bestLapTimeRef.current = time; // Aggiorna il ref immediatamente
+                            bestLapTimeRef.current = time;
                             await db.sessions.update(sessionId, { bestLapTime: time });
+
+                            // Call prepareReferenceLap to extract data from the new best lap time (FIX for Issue #3)
+                            const updatedRefSamples = await prepareReferenceLap(trackName);
+                            if (updatedRefSamples && updatedRefSamples.length > 0) {
+                                workerRef.current?.postMessage({ 
+                                    type: 'SET_REFERENCE_LAP', 
+                                    payload: { samples: updatedRefSamples } 
+                                });
+                                console.log("Reference Lap updated mid-session!");
+                            }
                         }
                         break;
                 }
