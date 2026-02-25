@@ -111,7 +111,7 @@ export default function App() {
       setFinishGate({ p1, p2 });
 
       const trackName = prompt("ENTER TRACK NAME:") || "New Track";
-      setCurrentTrackName(trackName);
+      setCurrentTrackName(trackName.toUpperCase());
       const newTrack: Track = {
         name: trackName.toUpperCase(),
         type: trackType!,

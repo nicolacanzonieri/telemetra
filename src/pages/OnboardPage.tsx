@@ -118,7 +118,8 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
         bestLapTimeRef.current = bestSession.bestLapTime || 0;
 
         const bestLapRecord = await db.laps
-            .where({ sessionId: bestSession.id, isBest: true })
+            .where('sessionId').equals(bestSession.id!)
+            .filter(lap => lap.isBest === true)
             .first();
 
         if (!bestLapRecord) return null;
@@ -131,14 +132,14 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
         if (allSamples.length === 0) return null;
 
         const targetLapSamples = [];
-        let currentLapIdx = 1;
+        let currentLapIdx = 0;
         
         // Filter the samples to get only the ones of the best lap
         for (let i = 1; i < allSamples.length; i++) {
             const prev = allSamples[i-1];
             const curr = allSamples[i];
 
-            if (curr.distance < prev.distance && prev.distance > 100) {
+            if (curr.distance < prev.distance) {
                 currentLapIdx++;
             }
 
