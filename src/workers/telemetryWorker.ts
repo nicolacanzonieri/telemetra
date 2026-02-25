@@ -38,7 +38,7 @@ let lastGpsTimestamp: number | null = null;
 // --- LAP TIMING & DELTA STATE ---
 let lapStartTime: number | null = null;
 let referenceLap: { distance: number; time: number }[] = [];
-let lastRefIndex = 0;           // Optimized pointer for Delta calculation
+let lastRefIndex = 0;
 
 // --- PERSISTENCE BUFFER ---
 let sampleBuffer: any[] = [];
