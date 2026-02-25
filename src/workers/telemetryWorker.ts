@@ -27,6 +27,7 @@ let finishGate: { p1: [number, number], p2: [number, number] } | null = null;
 let velocity = 0;               // m/s (Fused state)
 let lastVelocity = 0;           // Speed during the previous GPS tick (for Kinematics)
 let variance = 1;               // Uncertainty tracker
+let accelBiasX = 0;             // Calibration bias to prevent velocity drift
 let accelBiasY = 0;             // Calibration bias to prevent velocity drift
 let filteredGx = 0;             // Smoothed Lateral G
 let filteredGy = 0;             // Smoothed Longitudinal G
@@ -47,7 +48,7 @@ let sampleBuffer: any[] = [];
 export type WorkerMessage =
   | { type: 'START_SESSION'; payload: { sessionId: number; trackName: string, trackType: 'Circuit' | 'Sprint'; startGate: Gate | null; finishGate: Gate | null } }
   | { type: 'STOP_SESSION' }
-  | { type: 'SET_CALIBRATION'; payload: { biasY: number } } // For syncing bias
+  | { type: 'SET_CALIBRATION'; payload: { biasX: number, biasY: number } } // For syncing bias
   | { type: 'SENSOR_DATA'; payload: { accel: DeviceMotionEventAcceleration; timestamp: number } }
   | { type: 'GPS_DATA'; payload: { lat: number; lng: number; speed: number; timestamp: number } }
   | { type: 'SET_REFERENCE_LAP'; payload: { samples: { distance: number; time: number }[] } };
@@ -145,6 +146,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
       break;
 
     case 'SET_CALIBRATION':
+      accelBiasX = message.payload.biasX;
       accelBiasY = message.payload.biasY;
       break;
 
@@ -302,7 +304,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
         lng,
         speed: velocity, // Filtered Speed
         rawSpeed: gpsSpeedMS, // Raw GPS Speed
-        gLat: filteredGx,
+        gLat: filteredGx - accelBiasX,
         gLong: filteredGy - accelBiasY,
       });
 

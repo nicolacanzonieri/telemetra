@@ -400,7 +400,7 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
                             setCalibrateState(true); 
                             isCalibratedRef.current = true;
                             // SYNC BIAS WITH WORKER
-                            workerRef.current?.postMessage({ type: 'SET_CALIBRATION', payload: { biasY: calibratedRef.current.y } });
+                            workerRef.current?.postMessage({ type: 'SET_CALIBRATION', payload: { biasX: calibratedRef.current.x, biasY: calibratedRef.current.y } });
                         }} 
                         className="px-8 py-4 border border-border-1 text-text-1 font-mono uppercase tracking-widest"
                     >
