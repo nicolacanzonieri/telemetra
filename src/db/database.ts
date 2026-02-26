@@ -61,7 +61,7 @@ export class TelemetraDB extends Dexie {
         this.version(1).stores({
             tracks: '++id, name, type',
             sessions: '++id, date, trackName, bestLapTime',
-            samples: '++id, sessionId, timestamp lapNumber',
+            samples: '++id, sessionId, timestamp, lapNumber',
             laps: '++id, sessionId, lapNumber'
         });
     }
