@@ -59,7 +59,7 @@ export default function DataViewerPage({ onCloseDataViewerPage }: DataViewerPage
             const headers = [
                 "Timestamp", "Lap", "Lat", "Lng",
                 "Speed_MS", "Speed_GPS_Raw", "Distance_M",
-                "Accel_X", "Accel_Y", "Accel_Z",
+                "Accel_X", "Accel_Y",
                 "G_Lat", "G_Long", "G_Sum",
                 "Kalman_Variance", "Kalman_Gain", "Delta_S"
             ];
