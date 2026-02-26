@@ -13,7 +13,7 @@ interface SessionButtonProps {
     onExport: (id: number, tName: string) => void;
 }
 
-function SessionButton({sessionId, trackName, date, onExport}: SessionButtonProps) {
+function SessionButton({ sessionId, trackName, date, onExport }: SessionButtonProps) {
     const dateStr = new Date(date).toLocaleString();
 
     return (
@@ -29,16 +29,16 @@ function SessionButton({sessionId, trackName, date, onExport}: SessionButtonProp
                     ID: {sessionId}
                 </span>
             </button>
-            
+
             {/* Visual download indicator */}
             <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-icon-1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-icon-1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></svg>
             </div>
         </div>
     );
 }
 
-export default function DataViewerPage({onCloseDataViewerPage}: DataViewerPageProps) {
+export default function DataViewerPage({ onCloseDataViewerPage }: DataViewerPageProps) {
     const sessions = useLiveQuery(
         () => db.sessions.orderBy('date').reverse().toArray()
     );
@@ -46,46 +46,54 @@ export default function DataViewerPage({onCloseDataViewerPage}: DataViewerPagePr
     const handleExportSession = async (sessionId: number, trackName: string) => {
         try {
             const sessionData = await db.sessions.get(sessionId);
-            if (!sessionData) {
-                alert("Errore: Sessione non trovata");
-                return;
-            }
-
-            let trackData = await db.tracks
-                .where('name')
-                .equals(trackName.toUpperCase())
-                .first();
-
-            if (!trackData) {
-                trackData = await db.tracks
-                    .where('name')
-                    .equals(sessionData.trackName)
-                    .first();
-            }
-
-            const lapsData = await db.laps
-                .where('sessionId')
-                .equals(sessionId)
-                .toArray();
-
             const samplesData = await db.samples
                 .where('sessionId')
                 .equals(sessionId)
-                .toArray();
+                .sortBy('timestamp');
 
-            const exportObject = {
-                sessions: [sessionData],
-                tracks: trackData ? [trackData] : [],
-                laps: lapsData,
-                samples: samplesData
-            };
+            if (!samplesData || samplesData.length === 0) {
+                alert("No data found for this session.");
+                return;
+            }
 
-            const blob = new Blob([JSON.stringify(exportObject, null, 2)], { type: "application/json" });
+            const headers = [
+                "Timestamp", "Lap", "Lat", "Lng",
+                "Speed_MS", "Speed_GPS_Raw", "Distance_M",
+                "Accel_X", "Accel_Y", "Accel_Z",
+                "G_Lat", "G_Long", "G_Sum",
+                "Kalman_Variance", "Kalman_Gain", "Delta_S"
+            ];
+
+            const rows = samplesData.map(s => [
+                s.timestamp,
+                s.lapNumber,
+                s.lat.toFixed(8),
+                s.lng.toFixed(8),
+                s.speed.toFixed(3),
+                s.rawSpeed.toFixed(3),
+                s.distance.toFixed(2),
+                s.accelX.toFixed(4),
+                s.accelY.toFixed(4),
+                s.gLat.toFixed(3),
+                s.gLong.toFixed(3),
+                s.gSum.toFixed(3),
+                s.variance.toFixed(6),
+                s.kalmanGain.toFixed(6),
+                s.delta.toFixed(3)
+            ]);
+
+            const csvContent = [
+                headers.join(","),
+                ...rows.map(r => r.join(","))
+            ].join("\n");
+
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
+            const dateStr = new Date(sessionData!.date).toISOString().split('T')[0];
+
             a.href = url;
-            const timestamp = new Date(sessionData.date).toISOString().replace(/[:.]/g, '-');
-            a.download = `telemetra_${trackName.replace(/\s+/g, '_')}_${timestamp}.json`;
+            a.download = `telemetra_${trackName.replace(/\s+/g, '_')}_${dateStr}.csv`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -93,15 +101,15 @@ export default function DataViewerPage({onCloseDataViewerPage}: DataViewerPagePr
 
         } catch (e) {
             console.error("Export failed:", e);
-            alert("Error during the export of files");
+            alert("Error during CSV export");
         }
     };
-    
+
     return (
         <div className='w-screen h-screen absolute flex flex-col z-10 overflow-hidden bg-bg-1'>
             <div className='h-header-h flex flex-row items-center justify-end'>
                 <HeaderButton onClick={onCloseDataViewerPage}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-icon-lg h-icon-lg lucide lucide-x-icon lucide-x text-icon-1 active:text-icon-active-1"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-icon-lg h-icon-lg lucide lucide-x-icon lucide-x text-icon-1 active:text-icon-active-1"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                 </HeaderButton>
             </div>
 
@@ -114,15 +122,15 @@ export default function DataViewerPage({onCloseDataViewerPage}: DataViewerPagePr
                 </span>
 
                 <div className="w-full min-h-0 overflow-y-auto flex flex-col flex-1 items-center justify-start no-scrollbar pb-10">
-                    { sessions?.map((session) => (
-                        <SessionButton 
-                            key={session.id} 
-                            sessionId={session.id!} 
-                            trackName={session.trackName} 
+                    {sessions?.map((session) => (
+                        <SessionButton
+                            key={session.id}
+                            sessionId={session.id!}
+                            trackName={session.trackName}
                             date={session.date}
                             onExport={handleExportSession}
                         />
-                    )) }
+                    ))}
                     {(!sessions || sessions.length === 0) && (
                         <span className="text-text-1 font-mono opacity-50">NO SESSIONS FOUND</span>
                     )}

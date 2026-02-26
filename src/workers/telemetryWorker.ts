@@ -14,7 +14,7 @@ const ACCEL_NOISE = 0.5;        // Process noise for Kalman Filter
 const GPS_NOISE = 2.0;          // Measurement noise for Kalman Filter
 const ACCEL_SMOOTHING = 0.15;   // Low-pass filter for G-ball visualization
 const VELOCITY_DEADZONE = 0.05; // M/S threshold to ignore stationary sensor drift
-const BATCH_SIZE = 50;           // Samples to buffer before sending to UI/DB
+const BATCH_SIZE = 1000;           // Samples to buffer before sending to UI/DB
 
 // --- SESSION STATE ---
 let isRunning = false;
@@ -40,6 +40,9 @@ let lastGpsTimestamp: number | null = null;
 let lapStartTime: number | null = null;
 let referenceLap: { distance: number; time: number }[] = [];
 let lastRefIndex = 0;
+let currentLapNumber = 0;
+let lastKalmanGain = 0;
+let lastGpsRawSpeed = 0;
 
 // --- PERSISTENCE BUFFER ---
 let sampleBuffer: any[] = [];
@@ -130,6 +133,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
       variance = 1;
       distanceTraveled = 0;
       lastRefIndex = 0;
+      currentLapNumber = 0;
       lapStartTime = null;
 
       // Define Gates
@@ -174,6 +178,11 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
       filteredGx = (accel.x || 0) * ACCEL_SMOOTHING + filteredGx * (1 - ACCEL_SMOOTHING);
       filteredGy = (accel.y || 0) * ACCEL_SMOOTHING + filteredGy * (1 - ACCEL_SMOOTHING);
 
+      // Calculate G-Sum vector
+      const curGLat = filteredGx - accelBiasX;
+      const curGLong = filteredGy - accelBiasY;
+      const gSum = Math.sqrt(curGLat ** 2 + curGLong ** 2);
+
       // 2. Kalman Filter: Prediction Phase
       if (dtA > 0 && dtA < 0.2) {
         // Apply Calibration Bias to the accelerometer input
@@ -199,6 +208,25 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
         currentDelta = (timeSinceLapStart - referenceLap[lastRefIndex].time) / 1000;
       }
 
+      bufferSample({
+        timestamp: timestamp,
+        lapNumber: currentLapNumber,
+        lat: lastGpsPosition ? lastGpsPosition[0] : 0,
+        lng: lastGpsPosition ? lastGpsPosition[1] : 0,
+        speed: velocity,
+        rawSpeed: lastGpsRawSpeed,
+        distance: distanceTraveled,
+        accelX: accel.x || 0,
+        accelY: accel.y || 0,
+        accelZ: accel.z || 0,
+        gLat: curGLat,
+        gLong: curGLong,
+        gSum: gSum,
+        variance: variance,
+        kalmanGain: lastKalmanGain,
+        delta: currentDelta
+      });
+
       self.postMessage({
         type: 'UPDATE_STATS',
         payload: {
@@ -215,10 +243,10 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
       const { lat, lng, speed: gpsSpeedMS, timestamp: gpsTimestamp } = message.payload;
 
       // 1. Kalman Filter: Correction Phase
-      const kalmanGain = variance / (variance + GPS_NOISE);
-      const currentFilteredVelocity = velocity + kalmanGain * (gpsSpeedMS - velocity);
+      lastKalmanGain = variance / (variance + GPS_NOISE);
+      const currentFilteredVelocity = velocity + lastKalmanGain * (gpsSpeedMS - velocity);
       velocity = currentFilteredVelocity;
-      variance = (1 - kalmanGain) * variance;
+      variance = (1 - lastKalmanGain) * variance;
 
       // 2. Gate Crossing Logic
       if (lastGpsPosition && lastGpsTimestamp) {
@@ -269,19 +297,21 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
           const exactTime = lastGpsTimestamp + (preciseDeltaTime * 1000);
 
           if (lapStartTime === null) {
+            currentLapNumber = 1;
             lapStartTime = exactTime;
             distanceTraveled = 0;
             lastRefIndex = 0;
             self.postMessage({ type: 'STARTING_LAP', payload: { startTime: exactTime } });
           } else {
             const lapTimeMs = exactTime - lapStartTime;
+            currentLapNumber++;
 
             // Force the buffer to empty at the finish line (FIX for Issue #3)
             if (sampleBuffer.length > 0) {
               self.postMessage({ type: 'SAVE_BATCH', payload: [...sampleBuffer] });
               sampleBuffer = [];
             }
-            
+
             self.postMessage({ type: 'LAP_COMPLETED', payload: { lapTime: lapTimeMs } });
 
             // If Sprint, stop the engine after finish line
@@ -296,17 +326,6 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
           }
         }
       }
-
-      // 3. Persistent Storage
-      bufferSample({
-        timestamp: gpsTimestamp,
-        lat,
-        lng,
-        speed: velocity, // Filtered Speed
-        rawSpeed: gpsSpeedMS, // Raw GPS Speed
-        gLat: filteredGx - accelBiasX,
-        gLong: filteredGy - accelBiasY,
-      });
 
       // 4. Update State for Next Tick
       lastGpsPosition = [lat, lng];

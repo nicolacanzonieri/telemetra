@@ -34,12 +34,20 @@ export interface Sample {
     id?: number;
     sessionId: number;
     timestamp: number;
+    lapNumber: number;
     lat: number;
     lng: number;
     speed: number;
+    rawSpeed: number;
     distance: number;
+    accelX: number;
+    accelY: number;
     gLat: number;
     gLong: number;
+    gSum: number;
+    variance: number;
+    kalmanGain: number;
+    delta: number;
 }
 
 export class TelemetraDB extends Dexie {
@@ -53,7 +61,7 @@ export class TelemetraDB extends Dexie {
         this.version(1).stores({
             tracks: '++id, name, type',
             sessions: '++id, date, trackName, bestLapTime',
-            samples: '++id, sessionId, timestamp',
+            samples: '++id, sessionId, timestamp lapNumber',
             laps: '++id, sessionId, lapNumber'
         });
     }
