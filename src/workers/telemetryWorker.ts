@@ -186,7 +186,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
       // 2. Kalman Filter: Prediction Phase
       if (dtA > 0 && dtA < 0.2) {
         // Apply Calibration Bias to the accelerometer input
-        let accelMS2 = ((accel.y || 0) - accelBiasY) * 9.81;
+        let accelMS2 = ((accel.y || 0) - accelBiasY);
         if (Math.abs(accelMS2) < VELOCITY_DEADZONE) accelMS2 = 0;
 
         velocity += accelMS2 * dtA;
