@@ -140,7 +140,7 @@ export default function SettingsPage({onCloseSettings}: SettingsPageProps) {
 
             <div className="mt-auto mb-4 flex flex-col items-center gap-1 opacity-40">
                 <span className="text-[10px] font-mono tracking-tighter text-text-1 uppercase">
-                    Telemetra Core
+                    By Nicola Canzonieri for all motorsport lovers
                 </span>
                 <span className="text-sm font-mono font-bold text-text-2">
                     v{appVersion}
