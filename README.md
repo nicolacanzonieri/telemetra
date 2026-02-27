@@ -44,4 +44,4 @@ Telemetra doesn't just rely on raw GPS. Most phones have a 1Hz GPS refresh rate,
 **Safety First**. Telemetra is designed for use on closed circuits. Do not interact with the device while driving. The developer is not responsible for any accidents, injuries, or damage resulting from the use of this application. Always prioritize track safety and obey marshal instructions.
 
 ## 📄 License
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International** License - see the LICENSE file for details.
