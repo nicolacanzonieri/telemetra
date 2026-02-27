@@ -4,7 +4,6 @@
 [![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![PWA](https://img.shields.io/badge/PWA-Ready-ff69b4?logo=progressive-web-apps&logoColor=white)]()
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **Telemetra** is a high-performance, sensor-fusion Progressive Web App (PWA) designed for motorsports enthusiasts. It transforms a standard smartphone into a professional-grade telemetry deck, leveraging advanced signal processing to provide real-time lap timing, G-load analysis, and performance tracking without the need for external hardware.
 
