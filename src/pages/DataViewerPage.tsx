@@ -118,7 +118,7 @@ export default function DataViewerPage({ onCloseDataViewerPage }: DataViewerPage
                     Data Viewer
                 </span>
                 <span className="text-xs font-mono uppercase text-text-2 mb-4">
-                    Tap to export JSON
+                    Tap to export CSV
                 </span>
 
                 <div className="w-full min-h-0 overflow-y-auto flex flex-col flex-1 items-center justify-start no-scrollbar pb-10">

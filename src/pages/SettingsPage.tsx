@@ -41,6 +41,9 @@ export default function SettingsPage({onCloseSettings}: SettingsPageProps) {
     // Theme hook
     const { theme, toggleTheme } = useTheme();
 
+    // App version
+    const appVersion = __APP_VERSION__;
+
     // Update telemetra
     const handleUpdateTelemetra = async () => {
         if ('serviceWorker' in navigator) {
@@ -133,6 +136,15 @@ export default function SettingsPage({onCloseSettings}: SettingsPageProps) {
                     label={"Clear all data and update"} 
                     onClick={handleHardReset}
                 />
+            </div>
+
+            <div className="mt-auto mb-4 flex flex-col items-center gap-1 opacity-40">
+                <span className="text-[10px] font-mono tracking-tighter text-text-1 uppercase">
+                    Telemetra Core
+                </span>
+                <span className="text-sm font-mono font-bold text-text-2">
+                    v{appVersion}
+                </span>
             </div>
         </div>
     );
