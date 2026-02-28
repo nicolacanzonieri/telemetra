@@ -7,6 +7,12 @@ interface TrackSelectionPageProps {
     onCloseTrackSelection: () => void;
     onClickTrackType: (type: 'Circuit' | 'Sprint') => void;
     onSelectSavedTrack: (track: Track) => void;
+    onConfirmTrackCoordinates: (
+        sp1: { lat: number, lng: number } | null,
+        sp2: { lat: number, lng: number } | null,
+        fp1: { lat: number, lng: number },
+        fp2: { lat: number, lng: number }
+    ) => void;
 }
 
 interface TrackButtonProps {
@@ -41,10 +47,20 @@ function TrackTypeButton({label, children, onClick}: TrackTypeButtonProps) {
     );
 }
 
-export default function TrackSelectionPage({onCloseTrackSelection, onClickTrackType, onSelectSavedTrack}: TrackSelectionPageProps) {
+export default function TrackSelectionPage({onCloseTrackSelection, onClickTrackType, onSelectSavedTrack, onConfirmTrackCoordinates}: TrackSelectionPageProps) {
     const [isTrackMenuOpen, setIsTrackMenuOpen] = useState(true);
     const [isTrackTypeMenuOpen, setIsTrackTypeMenuOpen] = useState(false);
     const [isTrackCoordinatesOpen, setIsTrackCoordinatesOpen] = useState(false);
+
+    // Track coordinates (used only if the user choose to specify them)
+    const [sp1Lon, setSp1Lon] = useState<number | null>(null);
+    const [sp1Lat, setSp1Lat] = useState<number | null>(null);
+    const [sp2Lon, setSp2Lon] = useState<number | null>(null);
+    const [sp2Lat, setSp2Lat] = useState<number | null>(null);
+    const [fp1Lon, setFp1Lon] = useState<number>(0);
+    const [fp1Lat, setFp1Lat] = useState<number>(0);
+    const [fp2Lon, setFp2Lon] = useState<number>(0);
+    const [fp2Lat, setFp2Lat] = useState<number>(0);
 
     // Get saved tracks
     const savedTracks = useLiveQuery(
@@ -134,15 +150,18 @@ export default function TrackSelectionPage({onCloseTrackSelection, onClickTrackT
                 <div id="track-type-menu" className='min-h-0 overflow-y-auto flex flex-col flex-1 items-center justify-start p-p-md bg-bg-1'>
                     <span className="shrink-0 mb-10 text-text-1 text-3xl font-mono tracking-widest uppercase">Coordinates</span>
 
-                    <span className="shrink-0 mb-5 text-text-2 text-2xl font-mono tracking-widest uppercase">Starting point</span>
+                    <span className="shrink-0 mb-2 text-text-2 text-2xl font-mono tracking-widest uppercase">Starting point</span>
+                    <span className="shrink-0 mb-5 text-text-1 text-2xs font-mono tracking-widest uppercase">(Optional)</span>
                     <input 
                         type="number" 
                         placeholder="SP1 LONGITUDE" 
+                        onChange={(e) => setSp1Lon(e.target.value ? parseFloat(e.target.value) : null)}
                         className="shrink-0 w-full bg-transparent border-b border-border-1 py-2 text-text-1 font-mono outline-none placeholder:opacity-30"
                     />
                     <input 
                         type="number" 
                         placeholder="SP1 LATITUDE" 
+                        onChange={(e) => setSp1Lat(e.target.value ? parseFloat(e.target.value) : null)}
                         className="shrink-0 w-full bg-transparent border-b border-border-1 py-2 text-text-1 font-mono outline-none placeholder:opacity-30"
                     />
                     
@@ -151,11 +170,13 @@ export default function TrackSelectionPage({onCloseTrackSelection, onClickTrackT
                     <input 
                         type="number" 
                         placeholder="SP2 LONGITUDE" 
+                        onChange={(e) => setSp2Lon(e.target.value ? parseFloat(e.target.value) : null)}
                         className="shrink-0 w-full bg-transparent border-b border-border-1 py-2 text-text-1 font-mono outline-none placeholder:opacity-30"
                     />
                     <input 
                         type="number" 
                         placeholder="SP2 LATITUDE" 
+                        onChange={(e) => setSp2Lat(e.target.value ? parseFloat(e.target.value) : null)}
                         className="shrink-0 w-full bg-transparent border-b border-border-1 py-2 text-text-1 font-mono outline-none placeholder:opacity-30"
                     />
                     
@@ -165,11 +186,13 @@ export default function TrackSelectionPage({onCloseTrackSelection, onClickTrackT
                     <input 
                         type="number" 
                         placeholder="FP1 LONGITUDE" 
+                        onChange={(e) => setFp1Lon(e.target.value ? parseFloat(e.target.value) : 0)}
                         className="shrink-0 w-full bg-transparent border-b border-border-1 py-2 text-text-1 font-mono outline-none placeholder:opacity-30"
                     />
                     <input 
                         type="number" 
                         placeholder="FP1 LATITUDE" 
+                        onChange={(e) => setFp1Lat(e.target.value ? parseFloat(e.target.value) : 0)}
                         className="shrink-0 w-full bg-transparent border-b border-border-1 py-2 text-text-1 font-mono outline-none placeholder:opacity-30"
                     />
                     
@@ -178,17 +201,25 @@ export default function TrackSelectionPage({onCloseTrackSelection, onClickTrackT
                     <input 
                         type="number" 
                         placeholder="FP2 LONGITUDE" 
+                        onChange={(e) => setFp2Lon(e.target.value ? parseFloat(e.target.value) : 0)}
                         className="shrink-0 w-full bg-transparent border-b border-border-1 py-2 text-text-1 font-mono outline-none placeholder:opacity-30"
                     />
                     <input 
                         type="number" 
                         placeholder="FP2 LATITUDE" 
+                        onChange={(e) => setFp2Lat(e.target.value ? parseFloat(e.target.value) : 0)}
                         className="shrink-0 w-full bg-transparent border-b border-border-1 py-2 text-text-1 font-mono outline-none placeholder:opacity-30"
                     />
                     
                     <div className="shrink-0 h-10"/>
                     
-                    <TrackButton label="Confirm" onClick={() => null}/>
+                    <TrackButton label="Confirm" onClick={() => {
+                        const sp1 = (sp1Lat !== null && sp1Lon !== null) ? { lat: sp1Lat, lng: sp1Lon } : null;
+                        const sp2 = (sp2Lat !== null && sp2Lon !== null) ? { lat: sp2Lat, lng: sp2Lon } : null;
+                        const fp1 = { lat: fp1Lat, lng: fp1Lon };
+                        const fp2 = { lat: fp2Lat, lng: fp2Lon };
+                        onConfirmTrackCoordinates(sp1, sp2, fp1, fp2);
+                    }}/>
                 </div>
             )}
 
