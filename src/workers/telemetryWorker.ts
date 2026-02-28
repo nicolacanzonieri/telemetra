@@ -252,6 +252,8 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
       if (lastGpsPosition && lastGpsTimestamp) {
         const intersectT = getIntersection(lastGpsPosition[0], lastGpsPosition[1], lat, lng, finishGate.p1[0], finishGate.p1[1], finishGate.p2[0], finishGate.p2[1]);
 
+        console.log("INTERSECTION: " + intersectT);
+
         if (intersectT !== null) {
           // --- KINEMATIC INTERPOLATION (QUADRATIC) ---
 

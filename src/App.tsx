@@ -110,8 +110,10 @@ export default function App() {
 
     await db.tracks.add(newTrack);
 
-    setCurrentTrackName(newTrack.name);
+    console.log("NEW TRACK CREATED:", newTrack);
+
     setStartGate(newTrack.startGate || null);
+    setCurrentTrackName(newTrack.name);
     setFinishGate(newTrack.finishGate);
     setTrackType(newTrack.type);
 
@@ -157,8 +159,9 @@ export default function App() {
         newTrack.startGate.p2 = startGate.p2;
       }
 
-      console.log("NEW TRACK CREATED:", newTrack);
       await db.tracks.add(newTrack);
+
+      console.log("NEW TRACK CREATED:", newTrack);
 
       setIsEndpointPageOpen(false);
       setIsOnBoardPageOpen(true);
