@@ -72,7 +72,7 @@ export default function App() {
     // the 'finish' point. If we are instead setting a 'Circuit' type track then we only need the 
     // 'finish' point
     setSettingStep(type === 'Sprint' ? 'start' : 'finish');
-    
+
     // Open the endpoint selection page
     setIsTrackSelectionPageOpen(false);
     setIsEndpointPageOpen(true);
@@ -85,6 +85,38 @@ export default function App() {
     setStartGate(track.startGate || null);
     setFinishGate(track.finishGate);
     setTrackType(track.type);
+    setIsTrackSelectionPageOpen(false);
+    setIsOnBoardPageOpen(true);
+  };
+
+  // When entering manual track coordinates
+  const handleManualTrackCoordinates = async (
+    sp1: { lat: number, lng: number } | null,
+    sp2: { lat: number, lng: number } | null,
+    fp1: { lat: number, lng: number },
+    fp2: { lat: number, lng: number }
+  ) => {
+    const trackName = prompt("ENTER TRACK NAME:") || "Manual Track";
+
+    const isSprint = sp1 !== null && sp2 !== null;
+
+    const newTrack: Track = {
+      name: trackName.toUpperCase(),
+      type: isSprint ? 'Sprint' : 'Circuit',
+      startGate: isSprint ? { p1: sp1, p2: sp2 } : undefined,
+      finishGate: { p1: fp1, p2: fp2 },
+      createdAt: Date.now()
+    };
+
+    await db.tracks.add(newTrack);
+
+    console.log("NEW TRACK CREATED:", newTrack);
+
+    setStartGate(newTrack.startGate || null);
+    setCurrentTrackName(newTrack.name);
+    setFinishGate(newTrack.finishGate);
+    setTrackType(newTrack.type);
+
     setIsTrackSelectionPageOpen(false);
     setIsOnBoardPageOpen(true);
   };
@@ -115,9 +147,9 @@ export default function App() {
       const newTrack: Track = {
         name: trackName.toUpperCase(),
         type: trackType!,
-        finishGate: { 
-          p1: { lat: p1.lat, lng: p1.lng }, 
-          p2: { lat: p2.lat, lng: p2.lng } 
+        finishGate: {
+          p1: { lat: p1.lat, lng: p1.lng },
+          p2: { lat: p2.lat, lng: p2.lng }
         },
         createdAt: Date.now()
       };
@@ -127,8 +159,9 @@ export default function App() {
         newTrack.startGate.p2 = startGate.p2;
       }
 
-      console.log("NEW TRACK CREATED:", newTrack);
       await db.tracks.add(newTrack);
+
+      console.log("NEW TRACK CREATED:", newTrack);
 
       setIsEndpointPageOpen(false);
       setIsOnBoardPageOpen(true);
@@ -140,48 +173,49 @@ export default function App() {
     <div className='relative'>
 
       {/* MAIN MENU PAGE */}
-      { isStartMenuOpen && (
-        <StartMenuPage 
-          onOpenSettings={handleOpenSettings} 
+      {isStartMenuOpen && (
+        <StartMenuPage
+          onOpenSettings={handleOpenSettings}
           onOpenSession={handleOpenSession}
           onOpenDataViewer={handleOpenDataViewer}
         />
       )}
 
       {/* SETTINGS PAGE */}
-      { isSettingsOpen && (
-        <SettingsPage 
+      {isSettingsOpen && (
+        <SettingsPage
           onCloseSettings={handleCloseSettings}
         />
       )}
 
-      { isDataViewerPage && (
-        <DataViewerPage 
+      {isDataViewerPage && (
+        <DataViewerPage
           onCloseDataViewerPage={handleCloseDataViewer}
         />
       )}
 
       {/* TRACK SELECTION PAGE */}
-      { isTrackSelectionOpen && (
-        <TrackSelectionPage 
+      {isTrackSelectionOpen && (
+        <TrackSelectionPage
           onCloseTrackSelection={handleCloseTrackSelection}
           onClickTrackType={handleSelectTrackType}
           onSelectSavedTrack={handleSelectSavedTrack}
+          onConfirmTrackCoordinates={handleManualTrackCoordinates}
         />
       )}
-      
+
       {/* TRACK ENDPOINTS PAGE */}
-      { isEndpointPageOpen && (
-        <EndpointSelectionPage 
+      {isEndpointPageOpen && (
+        <EndpointSelectionPage
           title={gateStep === 'start' ? "Set Start Line" : "Set Finish Line"}
           onCloseEndpointPage={handleCloseEndpointPage}
-          onConfirm={handleConfirmGate} 
+          onConfirm={handleConfirmGate}
         />
       )}
 
       {/* ONBOARD PAGE */}
-      { isOnBoardPageOpen && (
-        <OnBoardPage 
+      {isOnBoardPageOpen && (
+        <OnBoardPage
           trackName={currentTrackName}
           startGate={startGate}
           finishGate={finishGate}

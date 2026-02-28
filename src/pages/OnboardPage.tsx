@@ -198,17 +198,17 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
             if ('wakeLock' in navigator) {
                 try {
                     wakeLockRef.current = await navigator.wakeLock.request('screen');
-                    console.log('Screen Wake Lock attivato: lo schermo non si spegnerà.');
+                    console.log('Screen Wake Lock activated');
                     
                     // Se il wake lock viene rilasciato dal sistema (es. batteria scarica), gestiamolo
                     wakeLockRef.current.addEventListener('release', () => {
-                        console.log('Screen Wake Lock rilasciato dal sistema.');
+                        console.log('Screen Wake Lock deactivated');
                     });
                 } catch (err) {
-                    console.error('Impossibile attivare lo Screen Wake Lock:', err);
+                    console.error('Impossible to activate the Screen Wake Lock: ', err);
                 }
             } else {
-                console.warn('Screen Wake Lock API non supportata da questo browser.');
+                console.warn('Screen Wake Lock API not supported by this browser');
             }
         };
 
