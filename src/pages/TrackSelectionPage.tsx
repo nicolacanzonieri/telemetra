@@ -154,14 +154,14 @@ export default function TrackSelectionPage({onCloseTrackSelection, onClickTrackT
                     <span className="shrink-0 mb-5 text-text-1 text-2xs font-mono tracking-widest uppercase">(Optional)</span>
                     <input 
                         type="number" 
-                        placeholder="SP1 LONGITUDE" 
-                        onChange={(e) => setSp1Lon(e.target.value ? parseFloat(e.target.value) : null)}
+                        placeholder="SP1 LATITUDE" 
+                        onChange={(e) => setSp1Lat(e.target.value ? parseFloat(e.target.value) : null)}
                         className="shrink-0 w-full bg-transparent border-b border-border-1 py-2 text-text-1 font-mono outline-none placeholder:opacity-30"
                     />
                     <input 
                         type="number" 
-                        placeholder="SP1 LATITUDE" 
-                        onChange={(e) => setSp1Lat(e.target.value ? parseFloat(e.target.value) : null)}
+                        placeholder="SP1 LONGITUDE" 
+                        onChange={(e) => setSp1Lon(e.target.value ? parseFloat(e.target.value) : null)}
                         className="shrink-0 w-full bg-transparent border-b border-border-1 py-2 text-text-1 font-mono outline-none placeholder:opacity-30"
                     />
                     
@@ -169,14 +169,14 @@ export default function TrackSelectionPage({onCloseTrackSelection, onClickTrackT
 
                     <input 
                         type="number" 
-                        placeholder="SP2 LONGITUDE" 
-                        onChange={(e) => setSp2Lon(e.target.value ? parseFloat(e.target.value) : null)}
+                        placeholder="SP2 LATITUDE" 
+                        onChange={(e) => setSp2Lat(e.target.value ? parseFloat(e.target.value) : null)}
                         className="shrink-0 w-full bg-transparent border-b border-border-1 py-2 text-text-1 font-mono outline-none placeholder:opacity-30"
                     />
                     <input 
                         type="number" 
-                        placeholder="SP2 LATITUDE" 
-                        onChange={(e) => setSp2Lat(e.target.value ? parseFloat(e.target.value) : null)}
+                        placeholder="SP2 LONGITUDE" 
+                        onChange={(e) => setSp2Lon(e.target.value ? parseFloat(e.target.value) : null)}
                         className="shrink-0 w-full bg-transparent border-b border-border-1 py-2 text-text-1 font-mono outline-none placeholder:opacity-30"
                     />
                     
@@ -185,14 +185,14 @@ export default function TrackSelectionPage({onCloseTrackSelection, onClickTrackT
                     <span className="mb-5 text-text-2 text-2xl font-mono tracking-widest uppercase">Finish point</span>
                     <input 
                         type="number" 
-                        placeholder="FP1 LONGITUDE" 
-                        onChange={(e) => setFp1Lon(e.target.value ? parseFloat(e.target.value) : 0)}
+                        placeholder="FP1 LATITUDE" 
+                        onChange={(e) => setFp1Lat(e.target.value ? parseFloat(e.target.value) : 0)}
                         className="shrink-0 w-full bg-transparent border-b border-border-1 py-2 text-text-1 font-mono outline-none placeholder:opacity-30"
                     />
                     <input 
                         type="number" 
-                        placeholder="FP1 LATITUDE" 
-                        onChange={(e) => setFp1Lat(e.target.value ? parseFloat(e.target.value) : 0)}
+                        placeholder="FP1 LONGITUDE" 
+                        onChange={(e) => setFp1Lon(e.target.value ? parseFloat(e.target.value) : 0)}
                         className="shrink-0 w-full bg-transparent border-b border-border-1 py-2 text-text-1 font-mono outline-none placeholder:opacity-30"
                     />
                     
@@ -200,14 +200,14 @@ export default function TrackSelectionPage({onCloseTrackSelection, onClickTrackT
 
                     <input 
                         type="number" 
-                        placeholder="FP2 LONGITUDE" 
-                        onChange={(e) => setFp2Lon(e.target.value ? parseFloat(e.target.value) : 0)}
+                        placeholder="FP2 LATITUDE" 
+                        onChange={(e) => setFp2Lat(e.target.value ? parseFloat(e.target.value) : 0)}
                         className="shrink-0 w-full bg-transparent border-b border-border-1 py-2 text-text-1 font-mono outline-none placeholder:opacity-30"
                     />
                     <input 
                         type="number" 
-                        placeholder="FP2 LATITUDE" 
-                        onChange={(e) => setFp2Lat(e.target.value ? parseFloat(e.target.value) : 0)}
+                        placeholder="FP2 LONGITUDE" 
+                        onChange={(e) => setFp2Lon(e.target.value ? parseFloat(e.target.value) : 0)}
                         className="shrink-0 w-full bg-transparent border-b border-border-1 py-2 text-text-1 font-mono outline-none placeholder:opacity-30"
                     />
                     
