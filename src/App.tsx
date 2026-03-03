@@ -140,29 +140,29 @@ export default function App() {
       setStartGate({ p1, p2 });
       setSettingStep('finish');
     } else {
-      setFinishGate({ p1, p2 });
-
+      
       const trackName = prompt("ENTER TRACK NAME:") || "New Track";
-      setCurrentTrackName(trackName.toUpperCase());
       const newTrack: Track = {
         name: trackName.toUpperCase(),
         type: trackType!,
-        finishGate: {
+        startGate: trackType === 'Sprint' && startGate ? {
+          p1: { lat: startGate.p1.lat, lng: startGate.p1.lng },
+          p2: { lat: startGate.p2.lat, lng: startGate.p2.lng }
+        } : undefined, finishGate: {
           p1: { lat: p1.lat, lng: p1.lng },
           p2: { lat: p2.lat, lng: p2.lng }
         },
         createdAt: Date.now()
       };
-
-      if (trackType === 'Sprint' && newTrack.startGate != null && startGate != null) {
-        newTrack.startGate.p1 = startGate.p1;
-        newTrack.startGate.p2 = startGate.p2;
-      }
-
+  
+      
       await db.tracks.add(newTrack);
-
+      
       console.log("NEW TRACK CREATED:", newTrack);
-
+      
+      setCurrentTrackName(trackName.toUpperCase());
+      setFinishGate({ p1, p2 });
+      
       setIsEndpointPageOpen(false);
       setIsOnBoardPageOpen(true);
     }
@@ -217,6 +217,7 @@ export default function App() {
       {isOnBoardPageOpen && (
         <OnBoardPage
           trackName={currentTrackName}
+          trackType={trackType!}
           startGate={startGate}
           finishGate={finishGate}
           onCloseOnboardPage={handleCloseOnboardPage}

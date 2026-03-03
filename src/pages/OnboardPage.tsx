@@ -13,6 +13,7 @@ import { db, type Gate } from "../db/database.ts";
 
 interface OnBoardPageProps {
     trackName: string;
+    trackType: 'Sprint' | 'Circuit';
     startGate: Gate | null;
     finishGate: Gate | null;
     onCloseOnboardPage: () => void;
@@ -73,7 +74,7 @@ function formatMs(ms: number) {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${milli.toString().padStart(3, '0')}`;
 }
 
-export default function OnBoardPage({ trackName, startGate, finishGate, onCloseOnboardPage }: OnBoardPageProps) {
+export default function OnBoardPage({ trackName, trackType, startGate, finishGate, onCloseOnboardPage }: OnBoardPageProps) {
     // --- STATE & REFS ---
     const [needsPermission, setNeedsPermission] = useState(false);
     const [calibrateState, setCalibrateState] = useState(false);
@@ -245,7 +246,7 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
                 id: sessionId, 
                 date: Date.now(), 
                 trackName, 
-                trackType: 'Circuit', 
+                trackType, 
                 bestLapTime: null 
             });
 
@@ -266,7 +267,7 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
             // Start Session
             worker.postMessage({ 
                 type: 'START_SESSION', 
-                payload: { sessionId, trackName, trackType: 'Circuit', startGate, finishGate } 
+                payload: { sessionId, trackName, trackType, startGate, finishGate } 
             });
 
             // Worker Message Routing
