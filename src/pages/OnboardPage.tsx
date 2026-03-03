@@ -13,6 +13,7 @@ import { db, type Gate } from "../db/database.ts";
 
 interface OnBoardPageProps {
     trackName: string;
+    trackType: 'Sprint' | 'Circuit';
     startGate: Gate | null;
     finishGate: Gate | null;
     onCloseOnboardPage: () => void;
@@ -73,7 +74,7 @@ function formatMs(ms: number) {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${milli.toString().padStart(3, '0')}`;
 }
 
-export default function OnBoardPage({ trackName, startGate, finishGate, onCloseOnboardPage }: OnBoardPageProps) {
+export default function OnBoardPage({ trackName, trackType, startGate, finishGate, onCloseOnboardPage }: OnBoardPageProps) {
     // --- STATE & REFS ---
     const [needsPermission, setNeedsPermission] = useState(false);
     const [calibrateState, setCalibrateState] = useState(false);
@@ -83,6 +84,7 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
     const [lastLapTime, setLastLapTime] = useState(0);
     const [bestLapTime, setBestLapTime] = useState(0);
     const [delta, setDelta] = useState(0);
+    const [isFinished, setIsFinished] = useState(false);
     const [_sampleCount, setSampleCount] = useState(0);
 
     const workerRef = useRef<Worker | null>(null);
@@ -245,7 +247,7 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
                 id: sessionId, 
                 date: Date.now(), 
                 trackName, 
-                trackType: 'Circuit', 
+                trackType, 
                 bestLapTime: null 
             });
 
@@ -266,7 +268,7 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
             // Start Session
             worker.postMessage({ 
                 type: 'START_SESSION', 
-                payload: { sessionId, trackName, trackType: 'Circuit', startGate, finishGate } 
+                payload: { sessionId, trackName, trackType, startGate, finishGate } 
             });
 
             // Worker Message Routing
@@ -298,7 +300,13 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
                     case 'LAP_COMPLETED':
                         const time = payload.lapTime;
                         setLastLapTime(time);
-                        lapStartTimeRef.current = Date.now();
+
+                        if (trackType === 'Sprint') {
+                            lapStartTimeRef.current = null; 
+                            setIsFinished(true);
+                        } else {
+                            lapStartTimeRef.current = Date.now();
+                        }
                         
                         const currentBest = bestLapTimeRef.current;
                         const isNewBest = currentBest === 0 || time < currentBest;
@@ -361,9 +369,14 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
             navigator.geolocation.clearWatch(watchId);
             window.removeEventListener('devicemotion', handleMotion);
             cancelAnimationFrame(requestRef.current);
-            workerRef.current?.terminate
+            
+            if (workerRef.current) {
+                workerRef.current.postMessage({ type: 'STOP_SESSION' });
+                workerRef.current.terminate();
+                workerRef.current = null;
+            }
         };
-    }, [handleMotion, trackName]);
+    }, [handleMotion, trackName]); 
 
     // --- UI INTERACTION ---
 
@@ -405,6 +418,19 @@ export default function OnBoardPage({ trackName, startGate, finishGate, onCloseO
                         className="px-8 py-4 border border-border-1 text-text-1 font-mono uppercase tracking-widest"
                     >
                         Calibrate Bias
+                    </button>
+                </div>
+            )}
+
+            {isFinished && (
+                <div className="fixed inset-0 flex flex-col items-center justify-center z-50 bg-bg-1/90 backdrop-blur-sm">
+                    <span className="text-text-2 text-4xl font-mono font-bold mb-4">FINISH!</span>
+                    <span className="text-text-1 text-xl font-mono mb-8 uppercase tracking-widest">Session Completed</span>
+                    <button 
+                        onClick={onCloseOnboardPage}
+                        className="px-12 py-6 border-2 border-border-1 text-text-1 font-mono uppercase font-bold text-xl"
+                    >
+                        Close Session
                     </button>
                 </div>
             )}
