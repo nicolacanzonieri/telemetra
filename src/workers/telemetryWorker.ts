@@ -327,6 +327,10 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
             // If Sprint, stop the engine after finish line
             if (trackType === 'Sprint') {
               isRunning = false;
+              if (sampleBuffer.length > 0) {
+                self.postMessage({ type: 'SAVE_BATCH', payload: [...sampleBuffer] });
+                sampleBuffer = [];
+              }
               return;
             }
 
