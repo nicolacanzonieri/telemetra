@@ -252,7 +252,10 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
       if (lastGpsPosition && lastGpsTimestamp) {
         const intersectT = getIntersection(lastGpsPosition[0], lastGpsPosition[1], lat, lng, finishGate.p1[0], finishGate.p1[1], finishGate.p2[0], finishGate.p2[1]);
 
-        console.log("INTERSECTION: " + intersectT);
+        // If we don't have a startGate then we are racing in a Circuit type track
+        const intersectT = !startGate ? 
+          getIntersection(lastGpsPosition[0], lastGpsPosition[1], lat, lng, finishGate.p1[0], finishGate.p1[1], finishGate.p2[0], finishGate.p2[1]) : 
+          getIntersection(lastGpsPosition[0], lastGpsPosition[1], lat, lng, startGate.p1[0], startGate.p1[1], startGate.p2[0], startGate.p2[1]);
 
         if (intersectT !== null) {
           // --- KINEMATIC INTERPOLATION (QUADRATIC) ---
