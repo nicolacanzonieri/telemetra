@@ -247,6 +247,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
       const { lat, lng, speed: gpsSpeedMS, timestamp: gpsTimestamp } = message.payload;
 
       // 1. Kalman Filter: Correction Phase
+      lastGpsRawSpeed = gpsSpeedMS; 
       lastKalmanGain = variance / (variance + GPS_NOISE);
       const currentFilteredVelocity = velocity + lastKalmanGain * (gpsSpeedMS - velocity);
       velocity = currentFilteredVelocity;
