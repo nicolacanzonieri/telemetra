@@ -85,18 +85,22 @@ function getIntersection(
  * coordinates (simplified Haversine formula)
  */
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371e3; // Radius of the Earth in meters
-  const φ1 = lat1 * Math.PI / 180;
-  const φ2 = lat2 * Math.PI / 180;
-  const Δφ = (lat2 - lat1) * Math.PI / 180;
-  const Δλ = (lon2 - lon1) * Math.PI / 180;
+  const earthRadiusMeters = 6371e3;
+  const lat1Radians = lat1 * Math.PI / 180;
+  const lat2Radians = lat2 * Math.PI / 180;
+  const latDeltaRadians = (lat2 - lat1) * Math.PI / 180;
+  const lonDeltaRadians = (lon2 - lon1) * Math.PI / 180;
 
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) *
-    Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const sinLatDelta = Math.sin(latDeltaRadians / 2);
+  const sinLonDelta = Math.sin(lonDeltaRadians / 2);
+  
+  const a = sinLatDelta * sinLatDelta +
+    Math.cos(lat1Radians) * Math.cos(lat2Radians) *
+    sinLonDelta * sinLonDelta;
+  
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-  return R * c;
+  return earthRadiusMeters * c;
 }
 
 /**
@@ -243,6 +247,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
       const { lat, lng, speed: gpsSpeedMS, timestamp: gpsTimestamp } = message.payload;
 
       // 1. Kalman Filter: Correction Phase
+      lastGpsRawSpeed = gpsSpeedMS; 
       lastKalmanGain = variance / (variance + GPS_NOISE);
       const currentFilteredVelocity = velocity + lastKalmanGain * (gpsSpeedMS - velocity);
       velocity = currentFilteredVelocity;
